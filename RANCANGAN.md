@@ -64,9 +64,13 @@ Kerjakan sesuai urutan. Pada akhir tiap tahap, jalankan verifikasi dan catat has
 
 ### Tahap 1 · Panel dan pembacaan tab
 
-- [ ] Siapkan manifest, service worker, shortcut, dan panel putih. Tampilkan status panel dan sumber serta tangani pembukaan panel dari ikon dan shortcut.
-- [ ] Buat mode ekstraksi teks utama, pilihan, viewport, dan seluruh halaman. Sediakan pratinjau dan **Pindai ulang**.
-- [ ] **Lulus ketika** panel membuka dan menampilkan teks tab aktif di Chrome serta Edge. Uji dua jendela, perpindahan tab saat memuat, pilihan ganda, input formulir, dan halaman yang dibatasi browser.
+- [x] Siapkan manifest, service worker, shortcut, dan panel putih. Tampilkan status panel dan sumber serta tangani pembukaan panel dari ikon dan shortcut.
+- [x] Buat mode ekstraksi teks utama, pilihan, viewport, dan seluruh halaman. Sediakan pratinjau dan **Pindai ulang**.
+- [x] **Lulus ketika** panel membuka dan menampilkan teks tab aktif di Chrome serta Edge. Uji dua jendela, perpindahan tab saat memuat, pilihan ganda, input formulir, dan halaman yang dibatasi browser.
+
+**Pemasangan untuk uji lokal.** Buka `chrome://extensions` atau `edge://extensions`, aktifkan mode pengembang, lalu pilih **Muat ekstensi tanpa paket** dan arahkan ke folder `extension/`. Buka halaman web dan jalankan **Baca Halaman** dari menu ekstensi atau dengan `Alt+Shift+G`.
+
+**Hasil uji di Windows.** Chrome 158 dan Edge 158 lulus pengujian tombol aksi, empat mode baca, pindai ulang, batas 6.000 karakter, pilihan ganda, tabel, pengecualian isi formulir, navigasi dokumen, halaman internal, PDF bawaan, dan pemisahan sumber di dua jendela. Hasil pindai tertunda dibuang saat pengguna pindah tab. Pengujian memakai [halaman uji lokal](tests/fixture.html). Shortcut fisik `Alt+Shift+G` terverifikasi di Chrome. Verifikasi shortcut fisik di Edge masih tertunda karena alat otomasi Windows tidak bisa memastikan URL tab uji.
 
 ### Tahap 2 · Percakapan lokal dan alat teks
 

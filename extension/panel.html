@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Baca Halaman</title>
+    <link rel="stylesheet" href="panel.css">
+    <script type="module" src="panel.js"></script>
+  </head>
+  <body>
+    <header class="header">
+      <div class="brand">
+        <img src="icons/page-32.png" alt="" width="20" height="20">
+        <h1>Baca Halaman</h1>
+      </div>
+      <div class="tab-title" id="tab-title" hidden></div>
+    </header>
+
+    <div class="toolbar">
+      <div class="field">
+        <label for="mode">Sumber teks</label>
+        <select id="mode" disabled>
+          <option value="main">Teks utama</option>
+          <option value="selection">Teks yang dipilih</option>
+          <option value="viewport">Teks di layar</option>
+          <option value="page">Seluruh halaman</option>
+        </select>
+      </div>
+      <button id="rescan" type="button" disabled>Pindai ulang</button>
+    </div>
+
+    <main class="content" aria-labelledby="preview-title">
+      <div class="preview-heading">
+        <h2 id="preview-title">Pratinjau sumber</h2>
+        <span id="count" class="count" hidden></span>
+      </div>
+      <p id="status" class="status" role="status" aria-atomic="true">
+        Klik ikon Baca Halaman atau tekan Alt+Shift+G di tab yang ingin dibaca.
+      </p>
+      <p id="limit" class="limit" hidden>Teks dipotong pada batas 6.000 karakter.</p>
+      <div id="preview" class="preview" role="region" aria-labelledby="preview-title" tabindex="0" hidden></div>
+    </main>
+  </body>
+</html>

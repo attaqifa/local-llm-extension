@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="id">
+  <meta charset="utf-8">
+  <title>Uji Baca Halaman</title>
+  <style>
+    body { font: 16px/1.5 system-ui, sans-serif; margin: 24px; }
+    label { display: block; }
+    .below-fold { margin-top: 1600px; }
+    .hidden { visibility: hidden; }
+  </style>
+  <nav>Navigasi jangan terbaca</nav>
+  <p>Pengantar di luar teks utama.</p>
+  <main>
+    <h1>Uji bacaan</h1>
+    <p id="selectable">Kota Bogor berada di Jawa Barat.</p>
+    <h2>Soal pilihan ganda</h2>
+    <p>Berapakah hasil 3 + 4?</p>
+    <ol type="A">
+      <li>Enam</li>
+      <li>Tujuh</li>
+    </ol>
+    <fieldset>
+      <legend>Pilih jawaban</legend>
+      <label><input type="radio" name="jawaban" value="nilai-internal-a"> A. Enam</label>
+      <label><input type="radio" name="jawaban" value="nilai-internal-b"> B. Tujuh</label>
+    </fieldset>
+    <table>
+      <tr><th>Nama</th><th>Nilai</th></tr>
+      <tr><td>Sari</td><td>90</td></tr>
+    </table>
+    <label>Catatan <input id="note" value="Isi input rahasia"></label>
+    <label>Masukan <textarea>Isi textarea rahasia</textarea></label>
+    <div contenteditable="true">Isi editor rahasia</div>
+    <p hidden>Tersembunyi dengan atribut</p>
+    <p class="hidden">Tersembunyi dengan CSS</p>
+    <details><summary>Bagian yang dapat dibuka</summary>Isi bagian tertutup</details>
+    <figure>
+      <img src="../extension/icons/page-48.png" alt="Contoh gambar dokumen" width="48" height="48">
+      <figcaption>Gambar 1. Contoh gambar dokumen.</figcaption>
+    </figure>
+    <p class="below-fold">Paragraf jauh di bawah layar.</p>
+  </main>
+  <footer>Footer jangan terbaca</footer>
+</html>
