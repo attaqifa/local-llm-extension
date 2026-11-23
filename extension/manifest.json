@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Baca Halaman",
-  "description": "Baca dan tinjau teks tab aktif di panel samping.",
-  "version": "0.1.0",
+  "description": "Baca dan olah teks di panel samping dengan Ollama lokal.",
+  "version": "0.2.0",
   "minimum_chrome_version": "116",
   "permissions": ["activeTab", "scripting", "sidePanel", "storage"],
   "host_permissions": ["http://127.0.0.1:11434/*"],

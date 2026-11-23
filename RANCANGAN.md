@@ -74,9 +74,21 @@ Kerjakan sesuai urutan. Pada akhir tiap tahap, jalankan verifikasi dan catat has
 
 ### Tahap 2 · Percakapan lokal dan alat teks
 
-- [ ] Sambungkan Ollama, pencarian model lokal, streaming jawaban, dan pembatalan. Buat alat Tanya halaman, Jawab soal, Ringkas, Jelaskan, dan Terjemahkan di atas alur permintaan yang sama.
-- [ ] Tambahkan kelola sumber, pertanyaan lanjutan, dan input teks manual atau file lokal. Pertahankan sumber yang telah dibaca jika koneksi gagal.
-- [ ] **Lulus ketika** jalur teks bekerja dengan internet diputus dan Ollama aktif. Uji pembatalan, respons parsial, Ollama mati, origin ditolak, dan model tidak tersedia.
+- [x] Sambungkan Ollama, pencarian model lokal, streaming jawaban, dan pembatalan. Buat alat Tanya halaman, Jawab soal, Ringkas, Jelaskan, dan Terjemahkan di atas alur permintaan yang sama.
+- [x] Tambahkan kelola sumber, pertanyaan lanjutan, dan input teks manual atau file lokal. Pertahankan sumber yang telah dibaca jika koneksi gagal.
+- [x] **Lulus ketika** jalur teks bekerja dengan internet diputus dan Ollama aktif. Uji pembatalan, respons parsial, Ollama mati, origin ditolak, dan model tidak tersedia.
+
+**Pemakaian.** Muat ulang ekstensi, jalankan Ollama, lalu buka **Baca Halaman** dari halaman web. Model bawaan adalah `gemma4:e4b`. Pilih **Nyala** atau **Mati** pada **Thinking** di dekat pemilih model. Pilihan tersedia pada model yang mendukung kedua mode, disimpan di browser, dan berlaku untuk permintaan berikutnya. Nilai awalnya **Mati**. Gunakan **Tambah** untuk mengetik, menempel teks, atau memilih file TXT atau Markdown. Urutan di **Sumber** menentukan teks yang masuk dalam batas gabungan 6.000 karakter.
+
+Jika Ollama menolak origin, gunakan ID ekstensi yang muncul di panel atau di halaman pengelola ekstensi. Hentikan instance Ollama yang sedang berjalan, lalu jalankan perintah berikut di PowerShell. Untuk dua ID berbeda, pisahkan kedua origin dengan koma. [Konfigurasi origin Ollama](https://docs.ollama.com/faq#how-can-i-allow-additional-web-origins-to-access-ollama)
+
+```powershell
+$env:OLLAMA_ORIGINS = "chrome-extension://<ID_EKSTENSI>"
+$env:OLLAMA_NO_CLOUD = "1"
+ollama serve
+```
+
+**Hasil uji di Windows.** Chrome 158 dan Edge 158 mendapat jawaban dari `gemma4:e4b` pada halaman uji lokal, dengan akses web eksternal kedua profil browser diblokir dan fitur cloud pada instance Ollama uji dimatikan. Di kedua browser, server simulasi menguji lima alat teks, pertanyaan lanjutan, perubahan sumber, pembatalan, respons parsial, server tak terjangkau, origin ditolak, model yang hilang, dan pembatasan 6.000 karakter. Uji klien dapat dijalankan dengan `node --test tests/ollama.test.mjs`.
 
 ### Tahap 3 · Pemindaian dan alat gambar
 

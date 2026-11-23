@@ -14,15 +14,39 @@
     <h1>Uji bacaan</h1>
     <p id="selectable">Kota Bogor berada di Jawa Barat.</p>
     <h2>Soal pilihan ganda</h2>
-    <p>Berapakah hasil 3 + 4?</p>
+    <p></p>
     <ol type="A">
-      <li>Enam</li>
-      <li>Tujuh</li>
+      <li></li>
+      <li></li>
     </ol>
     <fieldset>
-      <legend>Pilih jawaban</legend>
-      <label><input type="radio" name="jawaban" value="nilai-internal-a"> A. Enam</label>
-      <label><input type="radio" name="jawaban" value="nilai-internal-b"> B. Tujuh</label>
+      <legend>Soal pilihan ganda
+Sebuah database menggunakan MVCC. Setiap key memiliki versi awal 0. Saat mulai, transaksi membaca versi terakhir yang sudah berhasil commit. Saat mencoba commit, transaksi otomatis abort jika transaksi lain sudah menulis key yang sama setelah waktu mulainya. Jika berhasil commit, transaksi menulis ID-nya sebagai versi baru.
+Transaksi	Mulai	Coba commit	Key dibaca	Key ditulis	Biaya penolakan
+T1	1	10	b, c	a	4
+T2	2	12	a, d	b	6
+T3	3	14	b, e	c	3
+T4	4	16	a, c	d	5
+T5	5	18	d, f	e	2
+T6	13	22	c, e, a	f	4
+T7	17	24	e, f, b	a	3
+T8	19	26	a, b, d	c	4
+T9	15	28	a, d, f	a	6
+
+
+Kamu boleh menolak transaksi sebelum eksekusi. Setelah memilih transaksi yang ditolak, jalankan ulang jadwal dari keadaan awal. Biaya hanya dikenakan pada transaksi yang sengaja ditolak.
+
+Bentuk graf dari transaksi yang berhasil commit. Untuk setiap key, urutkan versi berdasarkan waktu commit, dengan versi awal di depan. Gambar sisi dari penulis ke pembaca versinya, dari penulis ke penulis versi berikutnya, dan dari pembaca ke penulis versi berikutnya setelah versi yang dibaca. Versi awal tidak punya simpul penulis. Abaikan sisi ke diri sendiri.
+
+Pilihan mana yang menghasilkan graf asiklik dengan biaya minimum dan menunjukkan urutan topologis yang valid?
+
+A. Tolak T1, T5, T6 dengan biaya 10. Urutan T2 → T4 → T3 → T8 → T7.
+B. Tolak T2, T5, T7 dengan biaya 11. Urutan T4 → T1 → T6 → T3 → T8 → T9.
+C. Tolak T2, T5, T6 dengan biaya 12. Urutan T4 → T1 → T3 → T8 → T7.
+D. Tolak T1, T4, T6 dengan biaya 13. Urutan T3 → T2 → T8 → T7 → T5.
+E. Tolak T1, T4, T6, T7 dengan biaya 16. Urutan T3 → T2 → T5 → T8 → T9.</legend>
+      <label><input type="radio" name="jawaban" value="nilai-internal-a"> </label>
+      <label><input type="radio" name="jawaban" value="nilai-internal-b"></label>
     </fieldset>
     <table>
       <tr><th>Nama</th><th>Nilai</th></tr>
