@@ -4,9 +4,9 @@ function limitText(text, limit = SOURCE_LIMIT) {
   return text.slice(0, limit).replace(/[\uD800-\uDBFF]$/, "").trimEnd();
 }
 
-export function createSourceList(onChange) {
-  const panel = document.querySelector("#sources-panel");
+export function createSourceList(onChange, onAdded) {
   const list = document.querySelector("#source-list");
+  const sourceToggle = document.querySelector("#show-sources");
   const count = document.querySelector("#source-count");
   const limit = document.querySelector("#source-limit");
   const status = document.querySelector("#source-status");
@@ -102,7 +102,7 @@ export function createSourceList(onChange) {
     view.querySelector(".source-down").addEventListener("click", () => move(item, 1));
     view.querySelector(".source-remove").addEventListener("click", () => {
       remove(item);
-      (list.querySelector("summary") || panel.querySelector("summary")).focus();
+      (list.querySelector("summary") || sourceToggle).focus();
     });
     view.querySelector(".source-copy").addEventListener("click", async () => {
       try {
@@ -124,6 +124,7 @@ export function createSourceList(onChange) {
     updateRow(item);
     updateOrderControls();
     publish();
+    return view;
   }
 
   function page(label, text = "", truncated = false) {
@@ -143,7 +144,7 @@ export function createSourceList(onChange) {
     publish();
   }
 
-  document.querySelector("#add-source").addEventListener("click", () => {
+  function openAdd() {
     ++draftVersion;
     form.reset();
     addButton.textContent = "Tambahkan teks";
@@ -151,7 +152,7 @@ export function createSourceList(onChange) {
     addStatus.hidden = true;
     dialog.showModal();
     textInput.focus();
-  });
+  }
   document.querySelector("#cancel-source").addEventListener("click", () => dialog.close());
   fileInput.addEventListener("change", () => {
     addButton.textContent = fileInput.files.length ? "Tambahkan file" : "Tambahkan teks";
@@ -194,10 +195,11 @@ export function createSourceList(onChange) {
       addStatus.hidden = false;
       return;
     }
-    insert(file ? "file" : "manual", label.slice(0, 170), limitText(value), fileTooLarge || value.length > SOURCE_LIMIT);
+    const added = insert(file ? "file" : "manual", label.slice(0, 170), limitText(value), fileTooLarge || value.length > SOURCE_LIMIT);
     tell("");
-    panel.open = true;
     dialog.close();
+    onAdded();
+    added.querySelector("summary").focus();
   });
 
   function reset() {
@@ -207,9 +209,8 @@ export function createSourceList(onChange) {
     items.length = 0;
     list.replaceChildren();
     tell("");
-    panel.open = true;
     publish();
   }
 
-  return { page, reset };
+  return { page, reset, openAdd };
 }

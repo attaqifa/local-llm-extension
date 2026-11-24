@@ -5,17 +5,17 @@ Dokumen kerja untuk membangun extension Manifest V3 di Chrome dan Edge pada Wind
 ## Pengalaman saat membuka extension
 
 1. Klik ikon extension atau tekan `Alt+Shift+G`. Panel samping terbuka pada jendela browser yang sama. Halaman sumber tetap terlihat.
-2. Panel langsung menampilkan judul tab dan status **Membaca halaman**. Setelah teks tersedia, panel menampilkan **Teks siap**, pratinjau sumber, dan kotak pertanyaan.
+2. Panel langsung menampilkan judul tab dan status **Membaca halaman**. Setelah teks tersedia, pengguna bisa bertanya atau membuka **Sumber** untuk memeriksa pratinjau.
 3. Jika ada gambar yang layak dipindai, panel langsung memproses satu gambar yang paling relevan dan menampilkan **Memindai gambar**. Hasilnya masuk ke daftar sumber. Pengguna bisa memilih gambar lain atau langsung memakai teks yang sudah siap.
 4. Profil bawaan **Harian** menyiapkan konteks, lalu menunggu pertanyaan atau pilihan alat. Profil **Jawab cepat** bisa langsung menjawab soal dari halaman. Sebuah jawaban pilihan ganda diawali huruf dan teks pilihan, diikuti alasan singkat.
 5. Saat pengguna pindah tab, panel menandai bahwa sumber berasal dari tab sebelumnya. Klik ikon atau shortcut di tab baru untuk membaca sumber baru. Tombol **Pindai ulang** membaca ulang tab sumber selama izin aksesnya masih berlaku.
 
 ### Tampilan
 
-- Warna dasar putih (`#FFFFFF`), garis pembatas abu-abu muda (`#E5E7EB`), teks gelap (`#111827`), dan font sistem. Gunakan penekanan warna seperlunya untuk fokus, tindakan utama, dan status. Beri nama dan ikon generik yang mudah dikenali sebagai extension.
-- Susun panel menjadi header, baris alat, area sumber dan percakapan, lalu kotak pertanyaan. Header memuat judul tab, status Ollama, dan **Pengaturan**. Baris alat menampilkan **Pindai ulang**, **Sumber**, dan **Tambah**.
-- Area percakapan bisa digulir. Kotak pertanyaan, tombol **Kirim**, dan tombol **Hentikan** tetap mudah dijangkau. Daftar sumber bisa dilipat setelah selesai diperiksa.
-- Gunakan lebar panel yang disediakan browser. Susun ulang kontrol agar tetap terbaca saat panel dipersempit. Tempatkan pengaturan profil dan model di halaman pengaturan extension.
+- Tampilan **Bacaan** memakai latar putih, garis pembatas abu-abu tipis, teks gelap, dan font sistem. Judul dan domain tab menjadi konteks di atas hasil yang ditampilkan dalam satu kolom.
+- **Sumber** membuka tampilan untuk memilih mode baca dan mengelola teks. Menu **···** berisi **Pindai ulang**, **Tambah sumber**, dan **Pengaturan**. Pilihan model, **Thinking**, dan status Ollama tersedia di **Pengaturan**. Saat koneksi atau model perlu diperiksa, panel menampilkan pesan dan tombol **Periksa**.
+- Area hasil bisa digulir. Kotak pertanyaan, pemilih alat, dan tombol **Kirim** atau **Hentikan** tetap di bawah. Mengirim permintaan dari tampilan sumber membuka kembali hasil.
+- Gunakan lebar panel yang disediakan browser dan susun ulang kontrol agar tetap terbaca di lebar 320 piksel.
 
 ## Alat dan pengaturan
 
@@ -78,7 +78,7 @@ Kerjakan sesuai urutan. Pada akhir tiap tahap, jalankan verifikasi dan catat has
 - [x] Tambahkan kelola sumber, pertanyaan lanjutan, dan input teks manual atau file lokal. Pertahankan sumber yang telah dibaca jika koneksi gagal.
 - [x] **Lulus ketika** jalur teks bekerja dengan internet diputus dan Ollama aktif. Uji pembatalan, respons parsial, Ollama mati, origin ditolak, dan model tidak tersedia.
 
-**Pemakaian.** Muat ulang ekstensi, jalankan Ollama, lalu buka **Baca Halaman** dari halaman web. Model bawaan adalah `gemma4:e4b`. Pilih **Nyala** atau **Mati** pada **Thinking** di dekat pemilih model. Pilihan tersedia pada model yang mendukung kedua mode, disimpan di browser, dan berlaku untuk permintaan berikutnya. Nilai awalnya **Mati**. Gunakan **Tambah** untuk mengetik, menempel teks, atau memilih file TXT atau Markdown. Urutan di **Sumber** menentukan teks yang masuk dalam batas gabungan 6.000 karakter.
+**Pemakaian.** Muat ulang ekstensi, jalankan Ollama, lalu buka **Baca Halaman** dari halaman web. Model bawaan adalah `gemma4:e4b`. Buka **··· → Pengaturan** untuk memilih model dan mengatur **Thinking**. Pilihan **Nyala** atau **Mati** tersedia pada model yang mendukung kedua mode, disimpan di browser, dan berlaku untuk permintaan berikutnya. Nilai awalnya **Mati**. Gunakan **Tambah sumber** untuk mengetik, menempel teks, atau memilih file TXT atau Markdown. Urutan di **Sumber** menentukan teks yang masuk dalam batas gabungan 6.000 karakter.
 
 Jika Ollama menolak origin, gunakan ID ekstensi yang muncul di panel atau di halaman pengelola ekstensi. Hentikan instance Ollama yang sedang berjalan, lalu jalankan perintah berikut di PowerShell. Untuk dua ID berbeda, pisahkan kedua origin dengan koma. [Konfigurasi origin Ollama](https://docs.ollama.com/faq#how-can-i-allow-additional-web-origins-to-access-ollama)
 

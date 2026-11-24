@@ -4,11 +4,27 @@ import { createChat } from "./chat.js";
 import { createSourceList, SOURCE_LIMIT } from "./source-list.js";
 
 const mode = document.querySelector("#mode");
-const rescan = document.querySelector("#rescan");
 const tabTitle = document.querySelector("#tab-title");
+const tabDomain = document.querySelector("#tab-domain");
 const status = document.querySelector("#status");
-const chat = createChat();
-const sources = createSourceList(chat.setSources);
+const workspace = document.querySelector("#workspace");
+const views = workspace.querySelectorAll("[data-workspace-view]");
+const sourceToggle = document.querySelector("#show-sources");
+const menu = document.querySelector("#panel-menu");
+const menuSummary = menu.querySelector("summary");
+const settingsHeading = document.querySelector("#settings-heading");
+const rescanButtons = document.querySelectorAll("[data-rescan]");
+
+function showView(name) {
+  for (const view of views) {
+    view.hidden = view.dataset.workspaceView !== name;
+  }
+  sourceToggle.setAttribute("aria-expanded", String(name === "sources"));
+  workspace.scrollTop = 0;
+}
+
+const chat = createChat(() => showView("conversation"));
+const sources = createSourceList(chat.setSources, () => showView("sources"));
 
 const messages = {
   idle: "Klik ikon Baca Halaman atau tekan Alt+Shift+G di tab yang ingin dibaca.",
@@ -17,7 +33,7 @@ const messages = {
   empty: "Tidak ada teks yang dapat dibaca dalam mode ini.",
   selection: "Blok teks di halaman, lalu klik Pindai ulang.",
   interrupted: "Pemindaian terhenti. Klik Pindai ulang untuk melanjutkan.",
-  blocked: "Halaman ini tidak bisa dibaca. Gunakan Tambah untuk memasukkan teks sendiri.",
+  blocked: "Halaman ini tidak bisa dibaca. Gunakan Tambah sumber untuk memasukkan teks sendiri.",
   lost: "Akses ke halaman berakhir. Buka kembali lewat ikon atau Alt+Shift+G di tab sumber.",
   navigated: "Dokumen tab sumber berubah. Buka kembali lewat ikon atau Alt+Shift+G.",
   removed: "Tab sumber sudah ditutup atau dipindahkan. Buka ekstensi di tab yang ingin dibaca.",
@@ -30,16 +46,18 @@ let scanId = 0;
 function render() {
   const canRead = Boolean(source?.documentId);
   mode.disabled = !canRead;
-  rescan.disabled = !canRead || source.status === "reading";
+  for (const button of rescanButtons) button.disabled = !canRead || source.status === "reading";
 
-  tabTitle.textContent = source ? source.title + (source.away ? " · Tab sebelumnya" : "") : "";
-  tabTitle.hidden = !source;
+  tabTitle.textContent = source?.title ?? "Halaman aktif";
+  tabDomain.textContent = source?.hostname ?? "";
+  tabDomain.hidden = !source?.hostname;
 
   let message = messages[source?.status ?? "idle"];
   if (source?.away) {
     message += " Sumber dari tab sebelumnya. Klik ikon atau tekan Alt+Shift+G di tab baru untuk mengganti sumber.";
   }
   if (status.textContent !== message) status.textContent = message;
+  status.classList.toggle("screen-reader", source?.status === "ready" && !source.away);
 }
 
 function invalidate(reason) {
@@ -69,6 +87,7 @@ async function scan(automatic = false) {
     }
     current.away = !tab.active;
     current.title = tab.title || "Tab sumber";
+    current.hostname = tab.url && /^https?:\/\//.test(tab.url) ? new URL(tab.url).hostname : "";
     if (!current.documentId) {
       invalidate("blocked");
       return;
@@ -107,10 +126,12 @@ function beginLaunch(launch) {
   if (source && !sameDocument) {
     chat.reset();
     sources.reset();
+    showView("conversation");
   }
   source = {
     ...launch,
     title: sameDocument ? source.title : "Tab aktif",
+    hostname: sameDocument ? source.hostname : "",
     away: false,
     status: "reading",
     result: sameDocument ? source.result : null,
@@ -147,7 +168,49 @@ chrome.tabs.onRemoved.addListener(removeSource);
 chrome.tabs.onDetached.addListener(removeSource);
 chrome.tabs.onReplaced.addListener((_added, removed) => removeSource(removed));
 mode.addEventListener("change", () => void scan());
-rescan.addEventListener("click", () => void scan());
+
+sourceToggle.addEventListener("click", () => {
+  showView(sourceToggle.getAttribute("aria-expanded") === "true" ? "conversation" : "sources");
+});
+for (const button of rescanButtons) {
+  button.addEventListener("click", () => {
+    if (menu.contains(button)) {
+      menu.open = false;
+      showView("sources");
+      mode.focus();
+    }
+    void scan();
+  });
+}
+for (const button of document.querySelectorAll("[data-add-source]")) {
+  button.addEventListener("click", () => {
+    if (menu.contains(button)) {
+      menu.open = false;
+      menuSummary.focus();
+    }
+    sources.openAdd();
+  });
+}
+for (const button of document.querySelectorAll("[data-open-settings]")) {
+  button.addEventListener("click", () => {
+    menu.open = false;
+    showView("settings");
+    settingsHeading.focus();
+  });
+}
+document.querySelector("#close-settings").addEventListener("click", () => {
+  showView("conversation");
+  menuSummary.focus();
+});
+document.addEventListener("click", (event) => {
+  if (menu.open && !menu.contains(event.target)) menu.open = false;
+});
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && menu.open) {
+    menu.open = false;
+    menuSummary.focus();
+  }
+});
 
 async function initialize() {
   ({ id: windowId } = await chrome.windows.getCurrent());

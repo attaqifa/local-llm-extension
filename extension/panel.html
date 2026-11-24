@@ -8,87 +8,107 @@
     <script type="module" src="panel.js"></script>
   </head>
   <body>
-    <header class="header">
-      <div class="brand">
-        <img src="icons/page-32.png" alt="" width="20" height="20">
-        <h1>Baca Halaman</h1>
+    <header class="panel-bar">
+      <span class="panel-name">Baca Halaman</span>
+      <details id="panel-menu" class="panel-menu">
+        <summary aria-label="Menu panel">···</summary>
+        <div class="menu-actions">
+          <button id="rescan" data-rescan type="button" disabled>Pindai ulang</button>
+          <button id="add-source" data-add-source type="button">Tambah sumber</button>
+          <button id="open-settings" data-open-settings type="button">Pengaturan</button>
+        </div>
+      </details>
+    </header>
+
+    <main class="workspace" id="workspace">
+      <header class="page-heading">
+        <div>
+          <h1 id="tab-title">Halaman aktif</h1>
+          <p id="tab-domain" class="meta" hidden></p>
+        </div>
+        <button id="show-sources" class="text-button source-toggle" type="button" aria-controls="sources-panel" aria-expanded="false">
+          Sumber <span id="source-count"></span>
+        </button>
+      </header>
+      <p id="status" class="status" role="status" aria-atomic="true">
+        Klik ikon Baca Halaman atau tekan Alt+Shift+G di tab yang ingin dibaca.
+      </p>
+      <div id="connection-problem" class="connection-problem" hidden>
+        <p id="connection-message" role="status"></p>
+        <button class="text-button" data-open-settings type="button">Periksa</button>
       </div>
-      <div class="tab-title" id="tab-title" hidden></div>
-      <div class="model-row">
-        <div class="field">
+
+      <section id="sources-panel" data-workspace-view="sources" aria-label="Sumber" hidden>
+        <div class="source-tools">
+          <div>
+            <label for="mode">Ambil teks dari</label>
+            <select id="mode" disabled>
+              <option value="main">Teks utama</option>
+              <option value="selection">Teks yang dipilih</option>
+              <option value="viewport">Teks di layar</option>
+              <option value="page">Seluruh halaman</option>
+            </select>
+          </div>
+          <button class="text-button" data-rescan type="button" disabled>Pindai ulang</button>
+          <button class="text-button" data-add-source type="button">Tambah sumber</button>
+        </div>
+        <p id="source-status" class="status" role="status" hidden></p>
+        <p id="source-limit" class="status" hidden>Batas gabungan 6.000 karakter mengikuti urutan sumber.</p>
+        <div id="source-list"></div>
+      </section>
+
+      <section id="settings-panel" data-workspace-view="settings" aria-labelledby="settings-heading" hidden>
+        <div class="settings-heading">
+          <h2 id="settings-heading" tabindex="-1">Pengaturan</h2>
+          <button id="close-settings" class="text-button" type="button">Selesai</button>
+        </div>
+        <div class="setting-row">
           <label for="model">Model lokal</label>
           <select id="model" disabled>
             <option value="">Memuat model…</option>
           </select>
         </div>
-        <div class="field thinking-field" id="thinking-field" hidden>
+        <div id="thinking-field" class="setting-row" hidden>
           <label for="thinking">Thinking</label>
           <select id="thinking" disabled>
             <option value="off">Mati</option>
             <option value="on">Nyala</option>
           </select>
         </div>
-        <button id="check-models" type="button">Cek ulang</button>
-      </div>
-      <p id="ollama-status" class="status" role="status">Memeriksa Ollama…</p>
-      <p id="ollama-origin" class="status" hidden>Tambahkan <code></code> ke OLLAMA_ORIGINS.</p>
-    </header>
+        <div class="setting-row">
+          <p id="ollama-status" class="status" role="status">Memeriksa Ollama…</p>
+          <button id="check-models" class="text-button" type="button">Cek ulang</button>
+        </div>
+        <p id="ollama-origin" class="status" hidden>Tambahkan <code></code> ke OLLAMA_ORIGINS.</p>
+      </section>
 
-    <div class="toolbar">
-      <div class="field">
-        <label for="mode">Sumber teks</label>
-        <select id="mode" disabled>
-          <option value="main">Teks utama</option>
-          <option value="selection">Teks yang dipilih</option>
-          <option value="viewport">Teks di layar</option>
-          <option value="page">Seluruh halaman</option>
-        </select>
-      </div>
-      <button id="rescan" type="button" disabled>Pindai ulang</button>
-      <button id="add-source" type="button">Tambah</button>
-    </div>
-
-    <main class="workspace" id="workspace">
-      <details id="sources-panel" open>
-        <summary>Sumber <span id="source-count" class="meta"></span></summary>
-        <p id="status" class="status" role="status" aria-atomic="true">
-          Klik ikon Baca Halaman atau tekan Alt+Shift+G di tab yang ingin dibaca.
-        </p>
-        <p id="source-status" class="status" role="status" hidden></p>
-        <p id="source-limit" class="status" hidden>Ollama menerima hingga 6.000 karakter sumber sesuai urutan daftar.</p>
-        <div id="source-list"></div>
-      </details>
-
-      <section class="conversation" aria-labelledby="chat-heading">
-        <h2 id="chat-heading">Percakapan</h2>
+      <section class="conversation" data-workspace-view="conversation" aria-label="Percakapan">
         <div id="turns"></div>
       </section>
     </main>
 
     <form class="composer" id="composer">
-      <div class="composer-tools">
-        <div class="field">
-          <label for="tool">Alat</label>
-          <select id="tool">
-            <option value="ask">Tanya halaman</option>
-            <option value="answer">Jawab soal</option>
-            <option value="summarize">Ringkas</option>
-            <option value="explain">Jelaskan</option>
-            <option value="translate">Terjemahkan</option>
-          </select>
-        </div>
-        <div id="language-field" class="field" hidden>
-          <label for="language">Bahasa tujuan</label>
-          <input id="language" value="Indonesia" maxlength="60">
-        </div>
+      <div id="language-field" class="language-field" hidden>
+        <label for="language">Bahasa tujuan</label>
+        <input id="language" value="Indonesia" maxlength="60">
       </div>
-      <label id="prompt-label" for="prompt">Pertanyaan</label>
-      <textarea id="prompt" rows="2" maxlength="2000" required></textarea>
+      <label id="prompt-label" class="screen-reader" for="prompt">Pertanyaan</label>
+      <textarea id="prompt" rows="2" maxlength="2000" placeholder="Tanya tentang halaman ini…" required></textarea>
       <div class="composer-footer">
-        <span id="composer-hint" class="meta"></span>
-        <button id="stop" type="button" hidden>Hentikan</button>
-        <button id="send" class="primary" type="submit" disabled>Kirim</button>
+        <label class="screen-reader" for="tool">Alat</label>
+        <select id="tool">
+          <option value="ask">Tanya halaman</option>
+          <option value="summarize">Ringkas</option>
+          <option value="explain">Jelaskan</option>
+          <option value="answer">Jawab soal</option>
+          <option value="translate">Terjemahkan</option>
+        </select>
+        <div class="composer-buttons">
+          <button id="stop" class="text-button" type="button" hidden>Hentikan</button>
+          <button id="send" class="primary" type="submit" disabled>Kirim</button>
+        </div>
       </div>
+      <p id="composer-hint" class="meta" hidden></p>
     </form>
 
     <dialog id="add-dialog" aria-labelledby="add-heading">
@@ -125,11 +145,11 @@
 
     <template id="turn-template">
       <article class="turn">
-        <h3 class="turn-tool"></h3>
+        <h2 class="turn-tool"></h2>
         <p class="turn-question"></p>
-        <p class="turn-sources meta"></p>
         <p class="turn-answer" hidden></p>
         <p class="turn-status status" role="status"></p>
+        <p class="turn-sources meta"></p>
       </article>
     </template>
   </body>
