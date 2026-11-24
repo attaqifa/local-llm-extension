@@ -92,9 +92,12 @@ ollama serve
 
 ### Tahap 3 · Pemindaian dan alat gambar
 
+- [x] Mulai dari satu gambar yang terlihat utuh di konten utama. Panel memotong tangkapan ke area gambar, meminta model vision lokal membacanya, dan menambahkan hasil yang bisa diedit di awal daftar **Sumber**. Pertanyaan pengguna membatalkan pemindaian otomatis yang masih berjalan.
 - [ ] Buat inventaris gambar, pemilihan kandidat, pemindaian otomatis, serta tindakan manual untuk area tab, viewport, clipboard, dan file gambar.
 - [ ] Tambahkan pembacaan langsung, tinjau transkripsi, dan penggabungan gambar dengan teks. Prioritaskan pertanyaan pengguna jika pemindaian otomatis masih berjalan.
 - [ ] **Lulus ketika** halaman bergambar memulai satu pemindaian dari pembukaan panel. Uji diagram, gambar kosong atau terpotong, gambar di luar viewport, zoom browser dan skala Windows, perubahan tab saat tangkapan, serta penggunaan transkripsi yang sudah diedit. Pastikan halaman teks murni memakai jalur teks tanpa tangkapan.
+
+**Uji pemindaian awal.** Chrome 158 dan `gemma4:e4b` di CPU berhasil membaca label diagram uji `MERAPI 2970` dari potongan gambar dengan akses web eksternal diblokir dan cloud Ollama dimatikan. Simulasi di Chrome juga memeriksa ukuran potongan, penyertaan transkripsi yang telah dikoreksi dalam pertanyaan, jalur teks murni, dan prioritas pertanyaan saat pemindaian berjalan. Pengujian Edge masih perlu dijalankan karena profil uji gagal dimulai.
 
 ### Tahap 4 · Profil, performa, dan pemasangan
 

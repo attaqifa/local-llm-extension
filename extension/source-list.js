@@ -114,7 +114,7 @@ export function createSourceList(onChange, onAdded) {
     });
 
     view.open = true;
-    if (kind === "page") {
+    if (kind === "page" || kind === "image") {
       items.unshift(item);
       list.prepend(view);
     } else {
@@ -212,5 +212,14 @@ export function createSourceList(onChange, onAdded) {
     publish();
   }
 
-  return { page, reset, openAdd };
+  function addImage(label, text) {
+    insert("image", label ? "Gambar · " + label : "Hasil pindai gambar", limitText(text), text.length > SOURCE_LIMIT);
+  }
+
+  function clearImage() {
+    const item = items.find((entry) => entry.kind === "image");
+    if (item) remove(item);
+  }
+
+  return { page, reset, openAdd, addImage, clearImage };
 }

@@ -100,6 +100,24 @@ test("does not send source content for denied, missing, or remote models", async
   assert.equal(fetch.mock.callCount(), replies.length);
 });
 
+test("sends image bytes to vision models and rejects text-only models", async (t) => {
+  const imageInput = [{ role: "user", content: "Salin tulisan", images: ["aW1hZ2U="] }];
+  let capabilities = ["completion"];
+  const fetch = t.mock.method(globalThis, "fetch", async (url, options) => {
+    if (url.endsWith("/api/show")) return Response.json({ capabilities });
+    assert.equal(url, origin + "/api/chat");
+    assert.deepEqual(JSON.parse(options.body).messages, imageInput);
+    return chatResponse(['{"done":true}']);
+  });
+  const options = { model, messages: imageInput, signal: signal(), onText: assert.fail };
+  await assert.rejects(streamChat(options), { code: "vision" });
+  assert.equal(fetch.mock.callCount(), 1);
+
+  capabilities = ["completion", "vision"];
+  await streamChat(options);
+  assert.equal(fetch.mock.callCount(), 3);
+});
+
 test("reports network failure and a stream that ends after partial text", async (t) => {
   t.mock.method(globalThis, "fetch", async (url) => {
     if (url.endsWith("/api/tags")) throw new TypeError("Failed to fetch");

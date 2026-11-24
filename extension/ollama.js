@@ -6,6 +6,7 @@ const messages = {
   missing: "Model tidak tersedia. Periksa daftar model lokal.",
   remote: "Pilih model yang berjalan di perangkat ini.",
   incompatible: "Model ini tidak mendukung percakapan teks.",
+  vision: "Model yang dipilih tidak bisa membaca gambar.",
   interrupted: "Respons Ollama terputus sebelum selesai.",
   invalid: "Ollama mengirim respons yang tidak dapat dibaca.",
   server: "Ollama gagal memproses permintaan. Periksa log Ollama, lalu coba lagi.",
@@ -99,12 +100,13 @@ export async function inspectLocalModel(model, signal) {
       details.capabilities?.includes("thinking");
     thinkingValues = legacyGemma ? [false, true] : [];
   }
-  return { thinkingValues };
+  return { thinkingValues, vision: details.capabilities?.includes("vision") === true };
 }
 
 export async function streamChat({ model, messages, think = false, signal, onText }) {
   // Recheck the model before any prompt or source text is sent to Ollama.
-  const { thinkingValues } = await inspectLocalModel(model, signal);
+  const { thinkingValues, vision } = await inspectLocalModel(model, signal);
+  if (!vision && messages.some((message) => message.images?.length)) throw new OllamaError("vision");
   const thinking = thinkingValues.includes(think) ? think
     : thinkingValues.includes(false) ? false : undefined;
   const response = await request("/api/chat", signal, {

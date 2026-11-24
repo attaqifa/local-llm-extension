@@ -2,11 +2,13 @@ import { extractText } from "./extract-text.js";
 import { consumedKey, launchKey } from "./session.js";
 import { createChat } from "./chat.js";
 import { createSourceList, SOURCE_LIMIT } from "./source-list.js";
+import { capturePageImage } from "./page-image.js";
 
 const mode = document.querySelector("#mode");
 const tabTitle = document.querySelector("#tab-title");
 const tabDomain = document.querySelector("#tab-domain");
 const status = document.querySelector("#status");
+const imageStatus = document.querySelector("#image-status");
 const workspace = document.querySelector("#workspace");
 const views = workspace.querySelectorAll("[data-workspace-view]");
 const sourceToggle = document.querySelector("#show-sources");
@@ -23,7 +25,11 @@ function showView(name) {
   workspace.scrollTop = 0;
 }
 
-const chat = createChat(() => showView("conversation"));
+const chat = createChat(() => {
+  if (source) source.skipImage = true;
+  cancelImage();
+  showView("conversation");
+}, cancelImage);
 const sources = createSourceList(chat.setSources, () => showView("sources"));
 
 const messages = {
@@ -42,6 +48,47 @@ const messages = {
 let windowId;
 let source = null;
 let scanId = 0;
+let imageScan = null;
+
+function showImageStatus(message = "") {
+  imageStatus.textContent = message;
+  imageStatus.hidden = !message;
+}
+
+function cancelImage() {
+  imageScan?.abort();
+  imageScan = null;
+  showImageStatus();
+}
+
+async function scanImage(current) {
+  if (source !== current || current.away || current.imageReady || current.skipImage || !current.hostname || imageScan) return;
+  const job = new AbortController();
+  imageScan = job;
+  try {
+    const result = await capturePageImage(current, job.signal, async () => {
+      showImageStatus("Memindai gambar…");
+      return chat.prepareImage(job.signal);
+    });
+    if (!result) {
+      if (!job.signal.aborted) showImageStatus();
+      return;
+    }
+    const text = await chat.transcribe(result.image, job.signal);
+    job.signal.throwIfAborted();
+    if (!text) {
+      showImageStatus("Model tidak mengirim hasil pembacaan gambar.");
+      return;
+    }
+    sources.addImage(result.label, text);
+    current.imageReady = true;
+    showImageStatus();
+  } catch (error) {
+    if (!job.signal.aborted) showImageStatus(error.message || "Gambar tidak bisa dibaca.");
+  } finally {
+    if (imageScan === job) imageScan = null;
+  }
+}
 
 function render() {
   const canRead = Boolean(source?.documentId);
@@ -62,15 +109,17 @@ function render() {
 
 function invalidate(reason) {
   ++scanId;
+  cancelImage();
   source.documentId = null;
   source.result = null;
   source.status = reason;
   if (reason === "navigated" || reason === "removed") chat.reset();
   sources.page("");
+  sources.clearImage();
   render();
 }
 
-async function scan(automatic = false) {
+async function scan(automatic = false, withImage = automatic) {
   const current = source;
   const readId = ++scanId;
   const selectedMode = mode.value;
@@ -115,6 +164,7 @@ async function scan(automatic = false) {
     const label = mode.selectedOptions[0].textContent + " — " + current.title.slice(0, 130);
     sources.page(label, frame.result.text, frame.result.truncated);
     render();
+    if (withImage) void scanImage(current);
   } catch {
     if (readId === scanId) invalidate(current.documentId ? "lost" : "blocked");
   }
@@ -123,6 +173,7 @@ async function scan(automatic = false) {
 function beginLaunch(launch) {
   if (!launch || launch.windowId !== windowId || launch.requestId === source?.requestId) return;
   const sameDocument = launch.documentId && launch.documentId === source?.documentId && launch.tabId === source.tabId;
+  cancelImage();
   if (source && !sameDocument) {
     chat.reset();
     sources.reset();
@@ -135,6 +186,7 @@ function beginLaunch(launch) {
     away: false,
     status: "reading",
     result: sameDocument ? source.result : null,
+    imageReady: sameDocument && source.imageReady,
   };
   void chrome.storage.session.set({ [consumedKey(windowId)]: launch.requestId }).catch(console.warn);
   void scan(true);
@@ -143,6 +195,7 @@ function beginLaunch(launch) {
 chrome.tabs.onActivated.addListener(({ tabId, windowId: activatedWindow }) => {
   if (!source || activatedWindow !== windowId) return;
   source.away = tabId !== source.tabId;
+  if (source.away) cancelImage();
   if (source.away && source.status === "reading" && source.documentId) {
     ++scanId;
     source.status = source.result ? "ready" : "interrupted";
@@ -179,7 +232,8 @@ for (const button of rescanButtons) {
       showView("sources");
       mode.focus();
     }
-    void scan();
+    source.skipImage = false;
+    void scan(false, true);
   });
 }
 for (const button of document.querySelectorAll("[data-add-source]")) {
@@ -228,3 +282,4 @@ async function initialize() {
 }
 
 void initialize().catch(console.warn);
+window.addEventListener("pagehide", cancelImage);
