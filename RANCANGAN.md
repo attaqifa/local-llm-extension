@@ -2,6 +2,8 @@
 
 Dokumen kerja untuk membangun extension Manifest V3 di Chrome dan Edge pada Windows. Extension membuka panel samping, membaca tab aktif, memindai gambar yang relevan, lalu menyediakan alat untuk bertanya dan mengolah sumber secara lokal lewat `gemma4:e4b`.
 
+[Panduan pemasangan dan izin koneksi untuk pengguna Windows](README.md)
+
 ## Pengalaman saat membuka extension
 
 1. Klik ikon extension atau tekan `Alt+Shift+G`. Panel samping terbuka pada jendela browser yang sama. Halaman sumber tetap terlihat.
