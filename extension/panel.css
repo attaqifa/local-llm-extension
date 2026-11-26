@@ -97,6 +97,17 @@ dialog input { width: 100%; }
 dialog textarea { max-height: 35vh; }
 dialog .meta, dialog .status { margin-top: 6px; }
 .dialog-actions { justify-content: flex-end; margin-top: 16px; }
+#private-panel { display: none; }
+body[data-private] #private-panel { display: block; }
+body[data-private] :is(#context, #turns, #composer, #sources-panel, #show-sources, #add-missing-source, #add-dialog),
+body[data-private] #show-chat[aria-current] { display: none; }
+body[data-private] #open-settings { margin-inline-start: auto; }
+.private-actions { position: sticky; top: 0; display: flex; flex-wrap: wrap; gap: 8px; background: white; padding-bottom: 6px; }
+#private-input { opacity: 0; pointer-events: none; caret-color: transparent; }
+.private-actions:has(#private-input:focus) #private-write { outline: 2px solid var(--accent); outline-offset: 2px; }
+#private-preview { white-space: pre-wrap; margin-top: 8px; user-select: none; }
+.private-actions button { user-select: none; touch-action: manipulation; }
+#private-mode { width: 18px; height: 18px; }
 @media (max-height: 540px) {
   .workspace { padding-block: 10px; }
 }

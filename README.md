@@ -49,6 +49,12 @@ Setelah disimpan, izin berlaku setiap kali Ollama dibuka. Ulangi pengaturan hany
 3. Buka **Sumber** untuk melihat teks tab. Kembali ke **Percakapan**, lalu coba pertanyaan *Apa tiga poin utama halaman ini?* dan klik **Kirim**.
 4. Untuk mencoba pemindaian, buka halaman dengan gambar berisi tulisan yang terlihat utuh. Buka panel dari tab tersebut dan tunggu hasilnya muncul di **Sumber**. Klik judul sumber gambar untuk memeriksa atau mengoreksi isinya.
 
+### Mode Privat
+
+Aktifkan **Pengaturan → Mode Privat**, lalu klik **Tulis**. Ketik pertanyaan dan tekan **Enter** untuk mengirim atau **Esc** untuk membuang draf. Kolom ketik, judul halaman, sumber, dan riwayat tersembunyi. Kamu tetap bisa bertanya ketika belum ada sumber.
+
+Tahan **Lihat draf** atau, setelah jawaban selesai, **Lihat jawaban**. Dengan keyboard, fokuskan tombol lalu tahan **Spasi** atau **Enter**. Lepaskan untuk menutup. Berpindah tab atau jendela juga menutup teks. Pilihan Mode Privat tersimpan saat panel dibuka kembali.
+
 ### Tambahkan screenshot atau file gambar
 
 1. Buka **Sumber → Tambah sumber**. Tempel screenshot dengan **Ctrl+V** di kotak teks, atau pilih file PNG, JPEG, atau WebP. Batas ukuran file gambar adalah 20 MB.

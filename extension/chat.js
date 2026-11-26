@@ -1,4 +1,5 @@
 import { inspectLocalModel, listLocalModels, streamChat } from "./ollama.js";
+import { createPrivateChat } from "./private-chat.js";
 
 const DEFAULT_MODEL = "gemma4:e4b";
 const MODEL_KEY = "selectedModel";
@@ -63,10 +64,13 @@ export function createChat(onSubmit, cancelImage) {
   let canToggleThinking = false;
   let sources = [];
   let history = [];
+  let privateHistory = [];
+  let lastNormalAnswer = "";
   let checking = null;
   let modelReady = false;
   let visionReady = false;
   let running = null;
+  const privateChat = createPrivateChat(submit, () => cancel("Permintaan dihentikan.", true));
 
   function controls() {
     model.disabled = Boolean(running || checking || model.options.length < 2);
@@ -78,6 +82,7 @@ export function createChat(onSubmit, cancelImage) {
     send.hidden = Boolean(running);
     stop.hidden = !running;
     addMissingSource.hidden = sources.length > 0;
+    if (privateChat.enabled) privateChat.update(Boolean(running), Boolean(checking), modelReady);
   }
 
   function setStatus(text, issue) {
@@ -168,12 +173,16 @@ export function createChat(onSubmit, cancelImage) {
   function finish(job, message, restorePrompt = false) {
     if (running !== job) return;
     running = null;
-    job.turn.message.textContent = message;
-    job.turn.message.hidden = !message;
-    if (restorePrompt && !prompt.value) prompt.value = job.question;
+    if (job.turn) {
+      job.turn.message.textContent = message;
+      job.turn.message.hidden = !message;
+    }
+    const field = job.private ? privateChat.input : prompt;
+    if (restorePrompt && !field.value) field.value = job.question;
+    if (privateChat.enabled) privateChat.finish(job.completed ? job.reply.data : "", message);
     const restoreFocus = document.activeElement === stop;
     controls();
-    if (restoreFocus) prompt.focus();
+    if (restoreFocus && !privateChat.enabled) prompt.focus();
   }
 
   function cancel(message = "", restorePrompt = false) {
@@ -189,6 +198,7 @@ export function createChat(onSubmit, cancelImage) {
     if (!identical) {
       sources = included;
       history = [];
+      privateHistory = [];
       cancel("Dihentikan karena sumber berubah.", true);
     }
     controls();
@@ -197,6 +207,9 @@ export function createChat(onSubmit, cancelImage) {
   function reset() {
     cancel();
     history = [];
+    privateHistory = [];
+    lastNormalAnswer = "";
+    privateChat.reset();
     turns.replaceChildren();
     prompt.value = "";
     tool.value = "ask";
@@ -204,11 +217,13 @@ export function createChat(onSubmit, cancelImage) {
   }
 
   async function submit() {
-    if (running || checking || !modelReady || !sources.length) return;
-    const question = prompt.value.trim();
-    const toolName = tool.value;
+    const isPrivate = privateChat.enabled;
+    if (running || checking || !modelReady || (!isPrivate && !sources.length)) return;
+    const field = isPrivate ? privateChat.input : prompt;
+    const question = field.value.trim();
+    const toolName = isPrivate ? "ask" : tool.value;
     if (toolName === "ask" && !question) {
-      prompt.focus();
+      field.focus();
       return;
     }
 
@@ -217,25 +232,27 @@ export function createChat(onSubmit, cancelImage) {
     const selectedTool = tools[toolName];
     const targetLanguage = language.value.trim() || "Indonesia";
     let instruction = selectedTool.instruction;
+    if (isPrivate && !included.length) instruction = "Jawab pertanyaan pengguna. Jika perlu isi halaman, minta konteksnya.";
     if (toolName === "translate") instruction += " Bahasa tujuan: " + JSON.stringify(targetLanguage) + ".";
     if (question) instruction += "\nPermintaan pengguna: " + question;
 
     const messages = [
       { role: "system", content: system },
-      ...history.flatMap(({ user, answer }) => [
+      ...(isPrivate ? privateHistory : history).flatMap(({ user, answer }) => [
         { role: "user", content: user },
         { role: "assistant", content: answer },
       ]),
       { role: "user", content: instruction + "\n\nData sumber (JSON): " + JSON.stringify(included) },
     ];
     onSubmit();
-    const turn = createTurn(selectedTool.title, question, included);
+    const turn = isPrivate ? null : createTurn(selectedTool.title, question, included);
     const controller = new AbortController();
-    const job = { controller, question, turn };
+    const job = { controller, question, turn, private: isPrivate, reply: turn?.text ?? document.createTextNode("") };
     running = job;
-    prompt.value = "";
+    field.value = "";
+    if (isPrivate) privateChat.reset();
     controls();
-    stop.focus();
+    (isPrivate ? document.querySelector("#private-stop") : stop).focus();
 
     try {
       await streamChat({
@@ -245,19 +262,27 @@ export function createChat(onSubmit, cancelImage) {
         signal: controller.signal,
         onText(chunk) {
           if (running !== job) return;
-          const pinned = !form.hidden && workspace.scrollHeight - workspace.scrollTop - workspace.clientHeight < 30;
-          turn.text.appendData(chunk);
+          const pinned = turn && !privateChat.enabled && !form.hidden && workspace.scrollHeight - workspace.scrollTop - workspace.clientHeight < 30;
+          job.reply.appendData(chunk);
+          if (!turn) return;
           turn.answer.hidden = false;
           turn.message.hidden = true;
           if (pinned) workspace.scrollTop = workspace.scrollHeight;
         },
       });
       if (running !== job) return;
-      if (!turn.text.data.trim()) {
+      if (!job.reply.data.trim()) {
         finish(job, "Model tidak mengirim teks jawaban.", true);
         return;
       }
-      history = [...history.slice(-2), { user: instruction.slice(0, 1000), answer: turn.text.data.slice(0, 1200) }];
+      job.completed = true;
+      const entry = { user: instruction.slice(0, 1000), answer: job.reply.data.slice(0, 1200) };
+      if (isPrivate) privateHistory = [...privateHistory.slice(-2), entry];
+      else {
+        history = [...history.slice(-2), entry];
+        lastNormalAnswer = job.reply.data;
+        if (privateChat.enabled) privateHistory = history;
+      }
       setStatus("Ollama lokal tersambung.");
       finish(job, "");
     } catch (error) {
@@ -286,7 +311,7 @@ export function createChat(onSubmit, cancelImage) {
     if (!event.repeat && !send.disabled) form.requestSubmit(send);
   });
   stop.addEventListener("click", () => {
-    const partial = running?.turn.text.data.trim();
+    const partial = running?.reply.data.trim();
     cancel(partial ? "Dihentikan. Jawaban belum lengkap." : "Permintaan dihentikan.", true);
     prompt.focus();
   });
@@ -333,5 +358,12 @@ export function createChat(onSubmit, cancelImage) {
     return text.trim();
   }
 
-  return { setSources, reset, prepareImage, transcribe };
+  function setPrivate(enabled) {
+    if (!enabled && running?.private) cancel();
+    privateHistory = enabled ? history : [];
+    privateChat.reset(enabled && !running ? lastNormalAnswer : "");
+    controls();
+  }
+
+  return { setSources, reset, prepareImage, transcribe, setPrivate, conceal: privateChat.conceal };
 }

@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="panel.css">
     <script type="module" src="panel.js"></script>
   </head>
-  <body>
+  <body hidden>
     <nav class="view-switch" aria-label="Tampilan panel">
       <button id="show-chat" type="button" aria-controls="conversation" aria-current="page">Percakapan</button>
       <button id="show-sources" type="button" aria-controls="sources-panel">Sumber <span id="source-count">0</span></button>
@@ -55,6 +55,11 @@
 
       <section id="settings-panel" data-workspace-view="settings" aria-label="Pengaturan" hidden>
         <div class="setting-row">
+          <label for="private-mode">Mode Privat</label>
+          <input id="private-mode" type="checkbox" autocomplete="off">
+        </div>
+        <p id="privacy-status" class="status" role="status" hidden></p>
+        <div class="setting-row">
           <label for="model">Model lokal</label>
           <select id="model" disabled>
             <option value="">Memuat model…</option>
@@ -77,6 +82,17 @@
       <section class="conversation" id="conversation" data-workspace-view="conversation" aria-label="Percakapan">
         <button id="add-missing-source" data-add-source type="button">Tambah sumber</button>
         <div id="turns"></div>
+        <div id="private-panel">
+          <div class="private-actions">
+            <button id="private-write" type="button" title="Enter untuk mengirim, Esc untuk membuang draf">Tulis</button>
+            <textarea id="private-input" class="screen-reader" tabindex="-1" aria-label="Pertanyaan privat. Enter untuk mengirim, Esc untuk membuang draf." maxlength="2000" autocomplete="off" autocapitalize="off" spellcheck="false"></textarea>
+            <button id="private-show-draft" type="button" title="Tahan untuk melihat draf" hidden>Lihat draf</button>
+            <button id="private-show-answer" type="button" title="Tahan untuk melihat jawaban" hidden>Lihat jawaban</button>
+            <button id="private-stop" type="button" hidden>Hentikan</button>
+          </div>
+          <p id="private-status" class="status" role="status"></p>
+          <p id="private-preview" hidden></p>
+        </div>
       </section>
     </main>
 

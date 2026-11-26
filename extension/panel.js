@@ -21,6 +21,8 @@ const context = document.querySelector("#context");
 const rescanButtons = document.querySelectorAll("[data-rescan]");
 const areaButtons = document.querySelectorAll("[data-pick-area]");
 const cancelArea = document.querySelector("#cancel-area");
+const privacyToggle = document.querySelector("#private-mode");
+const privacyStatus = document.querySelector("#privacy-status");
 
 let currentView = "conversation";
 let previousView = "conversation";
@@ -28,6 +30,8 @@ let settingsOpener = settingsButton;
 let chatScroll = 0;
 
 function showView(name) {
+  chat.conceal();
+  if (name === "sources" && privacyToggle.checked) name = "conversation";
   if (currentView === name) return;
   if (currentView === "conversation") chatScroll = workspace.scrollTop;
   if (name === "settings") previousView = currentView;
@@ -50,6 +54,52 @@ const chat = createChat(() => {
   showView("conversation");
 }, cancelImage);
 const sources = createSourceList(chat.setSources, () => showView("sources"), readLocalImage);
+
+function setPrivacy(enabled) {
+  const changed = enabled !== document.body.hasAttribute("data-private");
+  privacyToggle.checked = enabled;
+  document.body.toggleAttribute("data-private", enabled);
+  if (changed) {
+    cancelImage();
+    if (enabled) {
+      if (document.querySelector("#add-dialog").open) document.querySelector("#cancel-source").click();
+      if (currentView === "sources") showView("conversation");
+    }
+    chat.setPrivate(enabled);
+  }
+}
+
+privacyToggle.addEventListener("change", async () => {
+  const enabled = privacyToggle.checked;
+  setPrivacy(enabled);
+  privacyToggle.disabled = true;
+  privacyStatus.hidden = true;
+  if (enabled) {
+    showView("conversation");
+    document.querySelector("#private-write").focus();
+  }
+  try {
+    await chrome.storage.local.set({ privateMode: enabled });
+  } catch {
+    showView("settings");
+    privacyStatus.textContent = "Pilihan berlaku di panel ini saja. Gagal menyimpan pengaturan.";
+    privacyStatus.hidden = false;
+  } finally {
+    privacyToggle.disabled = false;
+  }
+});
+
+let privacyEnabledElsewhere = false;
+chrome.storage.onChanged.addListener((changes, area) => {
+  // Another window may cover this panel, but must never uncover its contents.
+  if (area === "local" && changes.privateMode?.newValue === true) {
+    privacyEnabledElsewhere = true;
+    setPrivacy(true);
+  }
+});
+chrome.storage.local.get("privateMode").then(({ privateMode }) => {
+  setPrivacy(privacyEnabledElsewhere || privateMode === true);
+}).catch(() => setPrivacy(true)).finally(() => { document.body.hidden = false; });
 
 const messages = {
   idle: "Buka Baca Halaman dari tab yang ingin dibaca.",
@@ -266,6 +316,7 @@ async function scan(automatic = false, withImage = automatic) {
 function beginLaunch(launch) {
   if (!launch || launch.windowId !== windowId || launch.requestId === source?.requestId) return;
   const sameDocument = launch.documentId && launch.documentId === source?.documentId && launch.tabId === source.tabId;
+  chat.conceal();
   cancelImage();
   if (source && !sameDocument) {
     chat.reset();
@@ -286,6 +337,7 @@ function beginLaunch(launch) {
 }
 
 chrome.tabs.onActivated.addListener(({ tabId, windowId: activatedWindow }) => {
+  chat.conceal();
   if (!source || activatedWindow !== windowId) return;
   source.away = tabId !== source.tabId;
   if (source.away) cancelImage();
@@ -296,9 +348,12 @@ chrome.tabs.onActivated.addListener(({ tabId, windowId: activatedWindow }) => {
   render();
 });
 
+chrome.windows.onFocusChanged.addListener(chat.conceal);
+
 chrome.tabs.onUpdated.addListener((tabId, change) => {
   if (tabId !== source?.tabId || !source.documentId) return;
   if (change.status === "loading") {
+    chat.conceal();
     invalidate("navigated");
   } else if (change.title) {
     source.title = change.title;
@@ -307,7 +362,10 @@ chrome.tabs.onUpdated.addListener((tabId, change) => {
 });
 
 function removeSource(tabId) {
-  if (tabId === source?.tabId) invalidate("removed");
+  if (tabId === source?.tabId) {
+    chat.conceal();
+    invalidate("removed");
+  }
 }
 
 chrome.tabs.onRemoved.addListener(removeSource);
