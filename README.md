@@ -49,6 +49,12 @@ Setelah disimpan, izin berlaku setiap kali Ollama dibuka. Ulangi pengaturan hany
 3. Klik **Selesai**. Buka **Sumber** untuk melihat teks tab, lalu coba pertanyaan *Apa tiga poin utama halaman ini?* dan klik **Kirim**.
 4. Untuk mencoba pemindaian, buka halaman dengan gambar berisi tulisan yang terlihat utuh. Buka panel dari tab tersebut dan tunggu hasilnya muncul di **Sumber**. Klik judul sumber gambar untuk memeriksa atau mengoreksi isinya.
 
+### Tambahkan screenshot atau file gambar
+
+1. Buka **··· → Tambah sumber**. Tempel screenshot dengan **Ctrl+V** di kotak teks, atau pilih file PNG, JPEG, atau WebP. Batas ukuran file gambar adalah 20 MB.
+2. Klik **Baca gambar**. Gunakan **Batal** jika ingin menghentikan pembacaan.
+3. Setelah selesai, hasil muncul di **Sumber**. Koreksi teks bila perlu, lalu kirim pertanyaan. Pertanyaan memakai teks hasil bacaan yang sudah dikoreksi.
+
 **Uji offline.** Buka halaman sumber terlebih dahulu, putuskan internet, lalu ajukan pertanyaan baru dari panel tanpa memuat ulang halaman. Setelah Ollama dan model terpasang, ekstensi mengirim permintaan ke API lokal. Untuk halaman yang tidak bisa dimuat saat offline, gunakan **··· → Tambah sumber** untuk menempel teks atau membuka file TXT atau Markdown.
 
 ## Jika sambungan bermasalah

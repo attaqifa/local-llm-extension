@@ -294,8 +294,8 @@ export function createChat(onSubmit, cancelImage) {
     await initialCheck;
     signal.throwIfAborted();
     if (running) return false;
-    if (checking || !modelReady) throw new Error("Periksa Ollama dan model di Pengaturan, lalu pindai ulang.");
-    if (!visionReady) throw new Error("Pilih model yang mendukung gambar di Pengaturan, lalu pindai ulang.");
+    if (checking || !modelReady) throw new Error("Periksa Ollama dan model di Pengaturan, lalu coba lagi.");
+    if (!visionReady) throw new Error("Pilih model yang mendukung gambar di Pengaturan, lalu coba lagi.");
     return true;
   }
 

@@ -1,3 +1,5 @@
+import { encodeCrop } from "./image-data.js";
+
 // executeScript serializes this function with no access to its module scope.
 export function findVisibleImage() {
   const root = document.querySelector("main") || document.querySelector('[role="main"]') ||
@@ -76,13 +78,7 @@ async function crop(dataUrl, layout) {
   }
   const width = (right - left) * scaleX;
   const height = (bottom - top) * scaleY;
-  const scale = Math.min(1, 1536 / Math.max(width, height));
-  const canvas = document.createElement("canvas");
-  canvas.width = Math.max(1, Math.round(width * scale));
-  canvas.height = Math.max(1, Math.round(height * scale));
-  canvas.getContext("2d").drawImage(image, left * scaleX, top * scaleY, width, height,
-    0, 0, canvas.width, canvas.height);
-  return canvas.toDataURL("image/png").split(",")[1];
+  return encodeCrop(image, left * scaleX, top * scaleY, width, height);
 }
 
 export async function capturePageImage(tab, signal, onCandidate) {

@@ -1,10 +1,12 @@
+import { isImageFile } from "./image-data.js";
+
 export const SOURCE_LIMIT = 6000;
 
 function limitText(text, limit = SOURCE_LIMIT) {
   return text.slice(0, limit).replace(/[\uD800-\uDBFF]$/, "").trimEnd();
 }
 
-export function createSourceList(onChange, onAdded) {
+export function createSourceList(onChange, onAdded, readLocalImage) {
   const list = document.querySelector("#source-list");
   const sourceToggle = document.querySelector("#show-sources");
   const count = document.querySelector("#source-count");
@@ -17,12 +19,16 @@ export function createSourceList(onChange, onAdded) {
   const nameInput = document.querySelector("#source-name");
   const textInput = document.querySelector("#source-text");
   const fileInput = document.querySelector("#source-file");
+  const pastedImageStatus = document.querySelector("#pasted-image");
+  const clearPastedImage = document.querySelector("#clear-pasted-image");
+  const cancelButton = document.querySelector("#cancel-source");
   const addStatus = document.querySelector("#add-status");
   const addButton = form.querySelector('[type="submit"]');
   const formatter = new Intl.NumberFormat("id-ID");
   const items = [];
   let nextId = 0;
-  let draftVersion = 0;
+  let pastedImage = null;
+  let reading = null;
 
   function publish() {
     const included = [];
@@ -114,7 +120,7 @@ export function createSourceList(onChange, onAdded) {
     });
 
     view.open = true;
-    if (kind === "page" || kind === "image") {
+    if (kind === "page" || kind === "image" || kind === "manual-image") {
       items.unshift(item);
       list.prepend(view);
     } else {
@@ -144,67 +150,148 @@ export function createSourceList(onChange, onAdded) {
     publish();
   }
 
+  function updateDraft() {
+    pastedImageStatus.hidden = !pastedImage;
+    const busy = Boolean(reading);
+    for (const field of [nameInput, textInput, fileInput, clearPastedImage, addButton]) {
+      field.disabled = busy;
+    }
+    const file = fileInput.files[0];
+    addButton.textContent = pastedImage || isImageFile(file)
+      ? "Baca gambar" : file ? "Tambahkan file" : "Tambahkan teks";
+  }
+
+  function discardDraft() {
+    reading?.abort();
+    reading = null;
+    pastedImage = null;
+  }
+
   function openAdd() {
-    ++draftVersion;
+    discardDraft();
     form.reset();
-    addButton.textContent = "Tambahkan teks";
-    addButton.disabled = false;
     addStatus.hidden = true;
+    updateDraft();
     dialog.showModal();
     textInput.focus();
   }
-  document.querySelector("#cancel-source").addEventListener("click", () => dialog.close());
+
+  function closeAdd() {
+    discardDraft();
+    form.reset();
+    dialog.close();
+  }
+
+  function finishAdd(view) {
+    tell("");
+    closeAdd();
+    onAdded();
+    view.querySelector("summary").focus();
+  }
+
+  async function addLocalImage(file, label) {
+    const job = new AbortController();
+    reading = job;
+    updateDraft();
+    cancelButton.focus();
+    addStatus.textContent = "Membaca gambar…";
+    addStatus.hidden = false;
+    try {
+      const text = await readLocalImage(file, job);
+      if (reading !== job || !dialog.open) return;
+      job.signal.throwIfAborted();
+      reading = null;
+      finishAdd(insert("manual-image", "Gambar · " + label.slice(0, 160), limitText(text), text.length > SOURCE_LIMIT));
+    } catch (error) {
+      if (reading !== job || !dialog.open) return;
+      addStatus.textContent = job.signal.aborted ? "Pembacaan gambar dihentikan." : error.message;
+    } finally {
+      if (reading === job) {
+        reading = null;
+        updateDraft();
+        addButton.focus();
+      }
+    }
+  }
+
+  cancelButton.addEventListener("click", closeAdd);
+  dialog.addEventListener("cancel", (event) => {
+    event.preventDefault();
+    closeAdd();
+  });
   fileInput.addEventListener("change", () => {
-    addButton.textContent = fileInput.files.length ? "Tambahkan file" : "Tambahkan teks";
+    pastedImage = null;
+    addStatus.hidden = true;
+    updateDraft();
+  });
+  textInput.addEventListener("paste", (event) => {
+    const file = Array.from(event.clipboardData?.files ?? []).find(isImageFile);
+    if (!file) return;
+    event.preventDefault();
+    if (addButton.disabled) return;
+    pastedImage = file;
+    fileInput.value = "";
+    addStatus.hidden = true;
+    updateDraft();
+  });
+  clearPastedImage.addEventListener("click", () => {
+    pastedImage = null;
+    addStatus.hidden = true;
+    updateDraft();
+    textInput.focus();
   });
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
     if (addButton.disabled) return;
     addStatus.hidden = true;
-    const version = draftVersion;
-    const file = fileInput.files[0];
+    const file = pastedImage || fileInput.files[0];
+    if (isImageFile(file)) {
+      await addLocalImage(file, nameInput.value.trim() || (pastedImage ? "Screenshot" : file.name));
+      return;
+    }
     const label = nameInput.value.trim() || file?.name || "Catatan " + (nextId + 1);
     let value = textInput.value;
     let fileTooLarge = false;
     if (file) {
       if (!/\.(txt|md|markdown)$/i.test(file.name)) {
-        addStatus.textContent = "Pilih file dengan ekstensi .txt, .md, atau .markdown.";
+        addStatus.textContent = "Pilih file TXT, Markdown, PNG, JPEG, atau WebP.";
         addStatus.hidden = false;
         return;
       }
       const slice = file.slice(0, (SOURCE_LIMIT + 1) * 4);
       fileTooLarge = slice.size < file.size;
-      addButton.disabled = true;
+      const job = new AbortController();
+      reading = job;
+      updateDraft();
       try {
         value = await slice.text();
+        if (reading !== job || !dialog.open) return;
       } catch {
-        if (draftVersion === version && dialog.open) {
+        if (reading === job && dialog.open) {
           addStatus.textContent = "File tidak dapat dibaca.";
           addStatus.hidden = false;
         }
         return;
       } finally {
-        if (draftVersion === version) addButton.disabled = false;
+        if (reading === job) {
+          reading = null;
+          updateDraft();
+        }
       }
-      if (draftVersion !== version || !dialog.open || fileInput.files[0] !== file) return;
     }
 
     value = value.trim();
     if (!value) {
-      addStatus.textContent = "Masukkan teks atau pilih file yang berisi teks.";
+      addStatus.textContent = "Masukkan teks, tempel screenshot, atau pilih file yang berisi data.";
       addStatus.hidden = false;
       return;
     }
     const added = insert(file ? "file" : "manual", label.slice(0, 170), limitText(value), fileTooLarge || value.length > SOURCE_LIMIT);
-    tell("");
-    dialog.close();
-    onAdded();
-    added.querySelector("summary").focus();
+    finishAdd(added);
   });
 
   function reset() {
-    ++draftVersion;
-    if (dialog.open) dialog.close();
+    if (dialog.open) closeAdd();
     form.reset();
     items.length = 0;
     list.replaceChildren();

@@ -114,13 +114,19 @@
 
     <dialog id="add-dialog" aria-labelledby="add-heading">
       <form id="source-form">
-        <h2 id="add-heading">Tambah sumber teks</h2>
+        <h2 id="add-heading">Tambah sumber</h2>
         <label for="source-name">Nama sumber (opsional)</label>
         <input id="source-name" maxlength="100">
         <label for="source-text">Ketik atau tempel teks</label>
-        <textarea id="source-text" rows="5"></textarea>
-        <label for="source-file">Atau pilih file TXT atau Markdown</label>
-        <input type="file" id="source-file" accept=".txt,.md,.markdown,text/plain,text/markdown">
+        <textarea id="source-text" rows="4" aria-describedby="paste-hint"></textarea>
+        <p id="paste-hint" class="meta">Gunakan Ctrl+V di sini untuk menempel screenshot.</p>
+        <div id="pasted-image" class="source-actions" hidden>
+          <span>Screenshot siap dibaca</span>
+          <button id="clear-pasted-image" class="text-button" type="button">Hapus</button>
+        </div>
+        <label for="source-file">Atau pilih file teks atau gambar</label>
+        <input type="file" id="source-file" accept=".txt,.md,.markdown,.png,.jpg,.jpeg,.webp,text/plain,text/markdown,image/png,image/jpeg,image/webp" aria-describedby="source-file-formats">
+        <p id="source-file-formats" class="meta">TXT, Markdown, PNG, JPEG, WebP. Gambar maksimal 20 MB.</p>
         <p id="add-status" class="status" role="status" hidden></p>
         <div class="dialog-actions">
           <button id="cancel-source" type="button">Batal</button>

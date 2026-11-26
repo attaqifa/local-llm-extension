@@ -3,6 +3,7 @@ import { consumedKey, launchKey } from "./session.js";
 import { createChat } from "./chat.js";
 import { createSourceList, SOURCE_LIMIT } from "./source-list.js";
 import { capturePageImage } from "./page-image.js";
+import { encodeLocalImage } from "./image-data.js";
 
 const mode = document.querySelector("#mode");
 const tabTitle = document.querySelector("#tab-title");
@@ -30,7 +31,7 @@ const chat = createChat(() => {
   cancelImage();
   showView("conversation");
 }, cancelImage);
-const sources = createSourceList(chat.setSources, () => showView("sources"));
+const sources = createSourceList(chat.setSources, () => showView("sources"), readLocalImage);
 
 const messages = {
   idle: "Klik ikon Baca Halaman atau tekan Alt+Shift+G di tab yang ingin dibaca.",
@@ -59,6 +60,23 @@ function cancelImage() {
   imageScan?.abort();
   imageScan = null;
   showImageStatus();
+}
+
+async function readLocalImage(file, job) {
+  cancelImage();
+  imageScan = job;
+  try {
+    if (!await chat.prepareImage(job.signal)) {
+      throw new Error("Tunggu jawaban selesai atau hentikan permintaannya sebelum membaca gambar.");
+    }
+    const image = await encodeLocalImage(file, job.signal);
+    const text = await chat.transcribe(image, job.signal);
+    job.signal.throwIfAborted();
+    if (!text) throw new Error("Model tidak mengirim hasil pembacaan gambar.");
+    return text;
+  } finally {
+    if (imageScan === job) imageScan = null;
+  }
 }
 
 async function scanImage(current) {
