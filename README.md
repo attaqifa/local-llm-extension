@@ -55,6 +55,12 @@ Setelah disimpan, izin berlaku setiap kali Ollama dibuka. Ulangi pengaturan hany
 2. Klik **Baca gambar**. Gunakan **Batal** jika ingin menghentikan pembacaan.
 3. Setelah selesai, hasil muncul di **Sumber**. Koreksi teks bila perlu, lalu kirim pertanyaan. Pertanyaan memakai teks hasil bacaan yang sudah dikoreksi.
 
+### Baca area tertentu langsung dari tab
+
+1. Buka **Baca Halaman** dari tab yang ingin dipindai. Gulir sampai bagian yang ingin dibaca terlihat.
+2. Klik **··· → Pilih area**, lalu seret dari satu sudut ke sudut lain di halaman dan lepaskan. Tekan **Esc** untuk batal.
+3. Gemma membaca potongan itu dan menambahkan hasilnya ke **Sumber**. Kamu bisa mengoreksi teksnya sebelum bertanya.
+
 **Uji offline.** Buka halaman sumber terlebih dahulu, putuskan internet, lalu ajukan pertanyaan baru dari panel tanpa memuat ulang halaman. Setelah Ollama dan model terpasang, ekstensi mengirim permintaan ke API lokal. Untuk halaman yang tidak bisa dimuat saat offline, gunakan **··· → Tambah sumber** untuk menempel teks atau membuka file TXT atau Markdown.
 
 ## Jika sambungan bermasalah

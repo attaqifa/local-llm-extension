@@ -1,4 +1,4 @@
-import { consumedKey, launchKey } from "./session.js";
+import { consumedKey, launchKey, readableDocument } from "./session.js";
 
 const pending = new Map();
 
@@ -12,11 +12,7 @@ chrome.action.onClicked.addListener((tab) => {
   pending.set(windowId, requestId);
 
   // Bind the gesture to a document before the panel starts its own scan.
-  const document = chrome.scripting.executeScript({
-    target: { tabId, frameIds: [0] },
-    injectImmediately: true,
-    func: () => globalThis.document.contentType === "application/pdf",
-  }).then(([frame]) => frame?.result === false ? frame.documentId : null, () => null);
+  const document = readableDocument(tabId);
 
   void Promise.all([opened, document]).then(async ([, documentId]) => {
     if (pending.get(windowId) !== requestId) return;

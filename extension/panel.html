@@ -14,6 +14,7 @@
         <summary aria-label="Menu panel">···</summary>
         <div class="menu-actions">
           <button id="rescan" data-rescan type="button" disabled>Pindai ulang</button>
+          <button data-pick-area type="button" disabled>Pilih area</button>
           <button id="add-source" data-add-source type="button">Tambah sumber</button>
           <button id="open-settings" data-open-settings type="button">Pengaturan</button>
         </div>
@@ -34,6 +35,7 @@
         Klik ikon Baca Halaman atau tekan Alt+Shift+G di tab yang ingin dibaca.
       </p>
       <p id="image-status" class="status" role="status" hidden></p>
+      <button id="cancel-area" class="text-button" type="button" hidden>Batalkan pilihan area</button>
       <div id="connection-problem" class="connection-problem" hidden>
         <p id="connection-message" role="status"></p>
         <button class="text-button" data-open-settings type="button">Periksa</button>
@@ -51,6 +53,7 @@
             </select>
           </div>
           <button class="text-button" data-rescan type="button" disabled>Pindai ulang</button>
+          <button class="text-button" data-pick-area type="button" disabled>Pilih area</button>
           <button class="text-button" data-add-source type="button">Tambah sumber</button>
         </div>
         <p id="source-status" class="status" role="status" hidden></p>

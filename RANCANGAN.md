@@ -96,13 +96,16 @@ ollama serve
 
 - [x] Mulai dari satu gambar yang terlihat utuh di konten utama. Panel memotong tangkapan ke area gambar, meminta model vision lokal membacanya, dan menambahkan hasil yang bisa diedit di awal daftar **Sumber**. Pertanyaan pengguna membatalkan pemindaian otomatis yang masih berjalan.
 - [x] Sediakan input screenshot dari clipboard dan file PNG, JPEG, atau WebP di **Tambah sumber**. Hasil pembacaan bisa diedit seperti sumber lain.
-- [ ] Buat inventaris gambar, pemilihan kandidat, serta tindakan manual untuk area tab dan viewport.
+- [x] Tambahkan **Pilih area** di tab aktif, dengan pembatalan lewat `Esc` dan validasi posisi tab sebelum serta sesudah tangkapan.
+- [ ] Buat inventaris gambar, pemilihan kandidat, dan tindakan untuk menangkap seluruh viewport.
 - [ ] Tambahkan pembacaan langsung, tinjau transkripsi, dan penggabungan gambar dengan teks. Prioritaskan pertanyaan pengguna jika pemindaian otomatis masih berjalan.
 - [ ] **Lulus ketika** halaman bergambar memulai satu pemindaian dari pembukaan panel. Uji diagram, gambar kosong atau terpotong, gambar di luar viewport, zoom browser dan skala Windows, perubahan tab saat tangkapan, serta penggunaan transkripsi yang sudah diedit. Pastikan halaman teks murni memakai jalur teks tanpa tangkapan.
 
 **Uji pemindaian awal.** Chrome 158 dan `gemma4:e4b` di CPU berhasil membaca label diagram uji `MERAPI 2970` dari potongan gambar dengan akses web eksternal diblokir dan cloud Ollama dimatikan. Simulasi di Chrome juga memeriksa ukuran potongan, penyertaan transkripsi yang telah dikoreksi dalam pertanyaan, jalur teks murni, dan prioritas pertanyaan saat pemindaian berjalan. Pengujian Edge masih perlu dijalankan karena profil uji gagal dimulai.
 
 **Uji input gambar manual.** Chrome 158 dengan `gemma4:e4b` di CPU berhasil membaca `MERAPI 2970` dari screenshot pada uji tempel dengan akses web eksternal diblokir dan cloud Ollama dimatikan. Simulasi di Chrome juga memeriksa JPEG dan WebP, penolakan file rusak, pembatalan pembacaan, input Markdown, dan pemakaian transkripsi yang telah dikoreksi.
+
+**Uji Pilih area.** Chrome 158 dengan `gemma4:e4b` di CPU membaca `MERAPI 2970` dari area halaman yang dipilih, dengan cloud Ollama dimatikan dan akses web eksternal diblokir. Simulasi Chrome memverifikasi ukuran potongan pada zoom 100% dan 125% dengan skala layar Windows 125%, hilangnya penanda sebelum tangkapan, serta pembatalan lewat `Esc`, tombol panel, dan perpindahan tab.
 
 ### Tahap 4 · Profil, performa, dan pemasangan
 

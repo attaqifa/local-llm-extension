@@ -66,15 +66,15 @@ async function snapshot(tab, signal) {
   return frame?.documentId === tab.documentId ? frame.result : null;
 }
 
-async function crop(dataUrl, layout) {
+export async function cropViewport(dataUrl, layout, bounds) {
   const image = new Image();
   image.src = dataUrl;
   await image.decode();
-  const { left, top, right, bottom } = layout.candidate;
+  const { left, top, right, bottom } = bounds;
   const scaleX = image.naturalWidth / layout.width;
   const scaleY = image.naturalHeight / layout.height;
   if (!scaleX || !scaleY || Math.abs(scaleX / scaleY - 1) > 0.03) {
-    throw new Error("Ukuran tangkapan berubah. Klik Pindai ulang untuk mencoba lagi.");
+    throw new Error("Ukuran tangkapan berubah. Coba ambil gambar lagi.");
   }
   const width = (right - left) * scaleX;
   const height = (bottom - top) * scaleY;
@@ -95,7 +95,7 @@ export async function capturePageImage(tab, signal, onCandidate) {
       const dataUrl = await chrome.tabs.captureVisibleTab(tab.windowId, { format: "png" });
       const after = await snapshot(tab, signal);
       if (JSON.stringify(ready) === JSON.stringify(after)) {
-        const image = await crop(dataUrl, ready);
+        const image = await cropViewport(dataUrl, ready, ready.candidate);
         signal.throwIfAborted();
         return { image, label: ready.candidate.label };
       }

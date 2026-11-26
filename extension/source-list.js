@@ -201,7 +201,7 @@ export function createSourceList(onChange, onAdded, readLocalImage) {
       if (reading !== job || !dialog.open) return;
       job.signal.throwIfAborted();
       reading = null;
-      finishAdd(insert("manual-image", "Gambar · " + label.slice(0, 160), limitText(text), text.length > SOURCE_LIMIT));
+      finishAdd(addManualImage(label, text));
     } catch (error) {
       if (reading !== job || !dialog.open) return;
       addStatus.textContent = job.signal.aborted ? "Pembacaan gambar dihentikan." : error.message;
@@ -303,10 +303,14 @@ export function createSourceList(onChange, onAdded, readLocalImage) {
     insert("image", label ? "Gambar · " + label : "Hasil pindai gambar", limitText(text), text.length > SOURCE_LIMIT);
   }
 
+  function addManualImage(label, text) {
+    return insert("manual-image", "Gambar · " + label.slice(0, 160), limitText(text), text.length > SOURCE_LIMIT);
+  }
+
   function clearImage() {
     const item = items.find((entry) => entry.kind === "image");
     if (item) remove(item);
   }
 
-  return { page, reset, openAdd, addImage, clearImage };
+  return { page, reset, openAdd, addImage, addManualImage, clearImage };
 }

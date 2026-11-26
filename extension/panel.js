@@ -1,9 +1,10 @@
 import { extractText } from "./extract-text.js";
-import { consumedKey, launchKey } from "./session.js";
+import { consumedKey, launchKey, readableDocument } from "./session.js";
 import { createChat } from "./chat.js";
 import { createSourceList, SOURCE_LIMIT } from "./source-list.js";
 import { capturePageImage } from "./page-image.js";
 import { encodeLocalImage } from "./image-data.js";
+import { captureTabArea } from "./tab-area.js";
 
 const mode = document.querySelector("#mode");
 const tabTitle = document.querySelector("#tab-title");
@@ -17,6 +18,8 @@ const menu = document.querySelector("#panel-menu");
 const menuSummary = menu.querySelector("summary");
 const settingsHeading = document.querySelector("#settings-heading");
 const rescanButtons = document.querySelectorAll("[data-rescan]");
+const areaButtons = document.querySelectorAll("[data-pick-area]");
+const cancelArea = document.querySelector("#cancel-area");
 
 function showView(name) {
   for (const view of views) {
@@ -42,14 +45,17 @@ const messages = {
   interrupted: "Pemindaian terhenti. Klik Pindai ulang untuk melanjutkan.",
   blocked: "Halaman ini tidak bisa dibaca. Gunakan Tambah sumber untuk memasukkan teks sendiri.",
   lost: "Akses ke halaman berakhir. Buka kembali lewat ikon atau Alt+Shift+G di tab sumber.",
-  navigated: "Dokumen tab sumber berubah. Buka kembali lewat ikon atau Alt+Shift+G.",
+  loading: "Menunggu halaman baru…",
+  navigated: "Klik ikon Baca Halaman atau tekan Alt+Shift+G untuk memberi akses ke halaman baru.",
   removed: "Tab sumber sudah ditutup atau dipindahkan. Buka ekstensi di tab yang ingin dibaca.",
 };
 
 let windowId;
 let source = null;
 let scanId = 0;
+let followId = 0;
 let imageScan = null;
+let areaScan = null;
 
 function showImageStatus(message = "") {
   imageStatus.textContent = message;
@@ -59,23 +65,74 @@ function showImageStatus(message = "") {
 function cancelImage() {
   imageScan?.abort();
   imageScan = null;
+  if (areaScan) {
+    areaScan = null;
+    updateAreaControls();
+  }
   showImageStatus();
+}
+
+function updateAreaControls() {
+  const available = Boolean(source?.documentId && source.hostname && !source.away);
+  for (const button of areaButtons) button.disabled = !available || Boolean(areaScan);
+  cancelArea.hidden = !areaScan;
+}
+
+async function prepareManualImage(signal) {
+  if (!await chat.prepareImage(signal)) {
+    throw new Error("Tunggu jawaban selesai atau hentikan permintaannya sebelum membaca gambar.");
+  }
+}
+
+async function readImageContent(image, signal) {
+  const text = await chat.transcribe(image, signal);
+  signal.throwIfAborted();
+  if (!text) throw new Error("Model tidak mengirim hasil pembacaan gambar.");
+  return text;
 }
 
 async function readLocalImage(file, job) {
   cancelImage();
   imageScan = job;
   try {
-    if (!await chat.prepareImage(job.signal)) {
-      throw new Error("Tunggu jawaban selesai atau hentikan permintaannya sebelum membaca gambar.");
-    }
+    await prepareManualImage(job.signal);
     const image = await encodeLocalImage(file, job.signal);
-    const text = await chat.transcribe(image, job.signal);
-    job.signal.throwIfAborted();
-    if (!text) throw new Error("Model tidak mengirim hasil pembacaan gambar.");
-    return text;
+    return await readImageContent(image, job.signal);
   } finally {
     if (imageScan === job) imageScan = null;
+  }
+}
+
+async function pickArea() {
+  if (!source?.documentId || !source.hostname || source.away || areaScan) return;
+  const current = { ...source };
+  cancelImage();
+  const job = new AbortController();
+  imageScan = areaScan = job;
+  updateAreaControls();
+  showImageStatus("Seret untuk memilih area di tab sumber. Tekan Esc untuk batal.");
+  try {
+    await prepareManualImage(job.signal);
+    const image = await captureTabArea(current, job.signal, () => showImageStatus("Membaca area…"));
+    if (!image) {
+      showImageStatus("Pemilihan area dibatalkan.");
+      return;
+    }
+    const text = await readImageContent(image, job.signal);
+    const view = sources.addManualImage("Area · " + current.title, text);
+    showView("sources");
+    showImageStatus("");
+    if (document.hasFocus()) view.querySelector("summary").focus();
+  } catch (error) {
+    if (!job.signal.aborted) showImageStatus(error.message || "Area tidak bisa dibaca.");
+  } finally {
+    if (imageScan === job) imageScan = null;
+    if (areaScan === job) {
+      const restoreFocus = document.activeElement === cancelArea;
+      areaScan = null;
+      updateAreaControls();
+      if (restoreFocus) sourceToggle.focus();
+    }
   }
 }
 
@@ -112,6 +169,7 @@ function render() {
   const canRead = Boolean(source?.documentId);
   mode.disabled = !canRead;
   for (const button of rescanButtons) button.disabled = !canRead || source.status === "reading";
+  updateAreaControls();
 
   tabTitle.textContent = source?.title ?? "Halaman aktif";
   tabDomain.textContent = source?.hostname ?? "";
@@ -131,7 +189,7 @@ function invalidate(reason) {
   source.documentId = null;
   source.result = null;
   source.status = reason;
-  if (reason === "navigated" || reason === "removed") chat.reset();
+  if (reason === "loading" || reason === "removed") chat.reset();
   sources.page("");
   sources.clearImage();
   render();
@@ -263,6 +321,17 @@ for (const button of document.querySelectorAll("[data-add-source]")) {
     sources.openAdd();
   });
 }
+for (const button of areaButtons) {
+  button.addEventListener("click", () => {
+    menu.open = false;
+    void pickArea();
+  });
+}
+cancelArea.addEventListener("click", () => {
+  cancelImage();
+  showImageStatus("Pemilihan area dibatalkan.");
+  sourceToggle.focus();
+});
 for (const button of document.querySelectorAll("[data-open-settings]")) {
   button.addEventListener("click", () => {
     menu.open = false;
@@ -278,6 +347,10 @@ document.addEventListener("click", (event) => {
   if (menu.open && !menu.contains(event.target)) menu.open = false;
 });
 document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && areaScan) {
+    event.preventDefault();
+    cancelArea.click();
+  }
   if (event.key === "Escape" && menu.open) {
     menu.open = false;
     menuSummary.focus();
