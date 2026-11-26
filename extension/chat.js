@@ -55,7 +55,7 @@ export function createChat(onSubmit, cancelImage) {
   const promptLabel = document.querySelector("#prompt-label");
   const send = document.querySelector("#send");
   const stop = document.querySelector("#stop");
-  const hint = document.querySelector("#composer-hint");
+  const addMissingSource = document.querySelector("#add-missing-source");
 
   origin.querySelector("code").textContent = location.origin;
 
@@ -73,11 +73,11 @@ export function createChat(onSubmit, cancelImage) {
     thinkingField.hidden = !canToggleThinking;
     thinking.disabled = Boolean(running || checking || !modelReady || !canToggleThinking);
     check.disabled = Boolean(running || checking);
-    send.disabled = Boolean(running || checking || !modelReady || !sources.length);
+    const canAsk = !running && !checking && modelReady && sources.length > 0;
+    send.disabled = !canAsk || (tool.value === "ask" && !prompt.value.trim());
     send.hidden = Boolean(running);
     stop.hidden = !running;
-    hint.hidden = Boolean(sources.length);
-    hint.textContent = hint.hidden ? "" : "Tambahkan sumber teks untuk memulai.";
+    addMissingSource.hidden = sources.length > 0;
   }
 
   function setStatus(text, issue) {
@@ -140,6 +140,7 @@ export function createChat(onSubmit, cancelImage) {
     promptLabel.textContent = prompt.required ? "Pertanyaan" : "Instruksi tambahan (opsional)";
     prompt.placeholder = prompt.required ? "Tanya tentang halaman ini…" : "Instruksi tambahan (opsional)…";
     send.textContent = prompt.required ? "Kirim" : "Jalankan";
+    controls();
   }
 
   function createTurn(label, question, included) {
@@ -148,7 +149,12 @@ export function createChat(onSubmit, cancelImage) {
     const questionView = view.querySelector(".turn-question");
     questionView.textContent = question;
     questionView.hidden = !question;
-    view.querySelector(".turn-sources").textContent = "Sumber · " + included.map(({ label }) => label).join(" · ");
+    const citations = view.querySelector(".turn-sources");
+    for (const source of included) {
+      const item = document.createElement("li");
+      item.textContent = source.label;
+      citations.append(item);
+    }
     const answer = view.querySelector(".turn-answer");
     const text = document.createTextNode("");
     answer.append(text);
@@ -193,23 +199,25 @@ export function createChat(onSubmit, cancelImage) {
     history = [];
     turns.replaceChildren();
     prompt.value = "";
+    tool.value = "ask";
+    updateTool();
   }
 
-  async function submit(event) {
-    event.preventDefault();
+  async function submit() {
     if (running || checking || !modelReady || !sources.length) return;
     const question = prompt.value.trim();
-    if (tool.value === "ask" && !question) {
+    const toolName = tool.value;
+    if (toolName === "ask" && !question) {
       prompt.focus();
       return;
     }
 
     const modelName = model.value;
     const included = sources;
-    const selectedTool = tools[tool.value];
+    const selectedTool = tools[toolName];
     const targetLanguage = language.value.trim() || "Indonesia";
     let instruction = selectedTool.instruction;
-    if (tool.value === "translate") instruction += " Bahasa tujuan: " + JSON.stringify(targetLanguage) + ".";
+    if (toolName === "translate") instruction += " Bahasa tujuan: " + JSON.stringify(targetLanguage) + ".";
     if (question) instruction += "\nPermintaan pengguna: " + question;
 
     const messages = [
@@ -237,7 +245,7 @@ export function createChat(onSubmit, cancelImage) {
         signal: controller.signal,
         onText(chunk) {
           if (running !== job) return;
-          const pinned = workspace.scrollHeight - workspace.scrollTop - workspace.clientHeight < 30;
+          const pinned = !form.hidden && workspace.scrollHeight - workspace.scrollTop - workspace.clientHeight < 30;
           turn.text.appendData(chunk);
           turn.answer.hidden = false;
           turn.message.hidden = true;
@@ -271,12 +279,21 @@ export function createChat(onSubmit, cancelImage) {
     void chrome.storage.local.set({ [THINKING_KEY]: thinking.value === "on" }).catch(console.warn);
   });
   tool.addEventListener("change", updateTool);
+  prompt.addEventListener("input", controls);
+  prompt.addEventListener("keydown", (event) => {
+    if (event.key !== "Enter" || event.shiftKey || event.isComposing || event.keyCode === 229) return;
+    event.preventDefault();
+    if (!event.repeat && !send.disabled) form.requestSubmit(send);
+  });
   stop.addEventListener("click", () => {
     const partial = running?.turn.text.data.trim();
     cancel(partial ? "Dihentikan. Jawaban belum lengkap." : "Permintaan dihentikan.", true);
     prompt.focus();
   });
-  form.addEventListener("submit", (event) => void submit(event));
+  form.addEventListener("submit", (event) => {
+    event.preventDefault();
+    void submit();
+  });
   window.addEventListener("pagehide", () => {
     checking?.abort();
     running?.controller.abort();

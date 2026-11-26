@@ -14,19 +14,34 @@ const imageStatus = document.querySelector("#image-status");
 const workspace = document.querySelector("#workspace");
 const views = workspace.querySelectorAll("[data-workspace-view]");
 const sourceToggle = document.querySelector("#show-sources");
-const menu = document.querySelector("#panel-menu");
-const menuSummary = menu.querySelector("summary");
-const settingsHeading = document.querySelector("#settings-heading");
+const chatToggle = document.querySelector("#show-chat");
+const settingsButton = document.querySelector("#open-settings");
+const composer = document.querySelector("#composer");
+const context = document.querySelector("#context");
 const rescanButtons = document.querySelectorAll("[data-rescan]");
 const areaButtons = document.querySelectorAll("[data-pick-area]");
 const cancelArea = document.querySelector("#cancel-area");
 
+let currentView = "conversation";
+let previousView = "conversation";
+let settingsOpener = settingsButton;
+let chatScroll = 0;
+
 function showView(name) {
+  if (currentView === name) return;
+  if (currentView === "conversation") chatScroll = workspace.scrollTop;
+  if (name === "settings") previousView = currentView;
+  currentView = name;
   for (const view of views) {
     view.hidden = view.dataset.workspaceView !== name;
   }
-  sourceToggle.setAttribute("aria-expanded", String(name === "sources"));
-  workspace.scrollTop = 0;
+  for (const [button, view] of [[chatToggle, "conversation"], [sourceToggle, "sources"], [settingsButton, "settings"]]) {
+    if (view === name) button.setAttribute("aria-current", "page");
+    else button.removeAttribute("aria-current");
+  }
+  context.hidden = name === "settings";
+  composer.hidden = name !== "conversation";
+  workspace.scrollTop = name === "conversation" ? chatScroll : 0;
 }
 
 const chat = createChat(() => {
@@ -37,7 +52,7 @@ const chat = createChat(() => {
 const sources = createSourceList(chat.setSources, () => showView("sources"), readLocalImage);
 
 const messages = {
-  idle: "Klik ikon Baca Halaman atau tekan Alt+Shift+G di tab yang ingin dibaca.",
+  idle: "Buka Baca Halaman dari tab yang ingin dibaca.",
   reading: "Membaca halaman…",
   ready: "Teks siap.",
   empty: "Tidak ada teks yang dapat dibaca dalam mode ini.",
@@ -172,6 +187,8 @@ function render() {
   updateAreaControls();
 
   tabTitle.textContent = source?.title ?? "Halaman aktif";
+  tabTitle.title = tabTitle.textContent;
+  document.querySelector("#page-context").hidden = !source;
   tabDomain.textContent = source?.hostname ?? "";
   tabDomain.hidden = !source?.hostname;
 
@@ -298,32 +315,19 @@ chrome.tabs.onDetached.addListener(removeSource);
 chrome.tabs.onReplaced.addListener((_added, removed) => removeSource(removed));
 mode.addEventListener("change", () => void scan());
 
-sourceToggle.addEventListener("click", () => {
-  showView(sourceToggle.getAttribute("aria-expanded") === "true" ? "conversation" : "sources");
-});
+sourceToggle.addEventListener("click", () => showView("sources"));
+chatToggle.addEventListener("click", () => showView("conversation"));
 for (const button of rescanButtons) {
   button.addEventListener("click", () => {
-    if (menu.contains(button)) {
-      menu.open = false;
-      showView("sources");
-      mode.focus();
-    }
     source.skipImage = false;
     void scan(false, true);
   });
 }
 for (const button of document.querySelectorAll("[data-add-source]")) {
-  button.addEventListener("click", () => {
-    if (menu.contains(button)) {
-      menu.open = false;
-      menuSummary.focus();
-    }
-    sources.openAdd();
-  });
+  button.addEventListener("click", sources.openAdd);
 }
 for (const button of areaButtons) {
   button.addEventListener("click", () => {
-    menu.open = false;
     void pickArea();
   });
 }
@@ -334,26 +338,21 @@ cancelArea.addEventListener("click", () => {
 });
 for (const button of document.querySelectorAll("[data-open-settings]")) {
   button.addEventListener("click", () => {
-    menu.open = false;
+    settingsOpener = button;
     showView("settings");
-    settingsHeading.focus();
+    settingsButton.focus();
   });
 }
-document.querySelector("#close-settings").addEventListener("click", () => {
-  showView("conversation");
-  menuSummary.focus();
-});
-document.addEventListener("click", (event) => {
-  if (menu.open && !menu.contains(event.target)) menu.open = false;
-});
+function closeSettings() {
+  showView(previousView);
+  (settingsOpener.checkVisibility() ? settingsOpener : settingsButton).focus();
+}
 document.addEventListener("keydown", (event) => {
-  if (event.key === "Escape" && areaScan) {
+  if (event.key !== "Escape" || document.querySelector("dialog[open]")) return;
+  if (currentView === "settings") closeSettings();
+  else if (areaScan) {
     event.preventDefault();
     cancelArea.click();
-  }
-  if (event.key === "Escape" && menu.open) {
-    menu.open = false;
-    menuSummary.focus();
   }
 });
 

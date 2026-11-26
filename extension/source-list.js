@@ -10,13 +10,13 @@ export function createSourceList(onChange, onAdded, readLocalImage) {
   const list = document.querySelector("#source-list");
   const sourceToggle = document.querySelector("#show-sources");
   const count = document.querySelector("#source-count");
+  const empty = document.querySelector("#no-sources");
   const limit = document.querySelector("#source-limit");
   const status = document.querySelector("#source-status");
   const template = document.querySelector("#source-template");
 
   const dialog = document.querySelector("#add-dialog");
   const form = document.querySelector("#source-form");
-  const nameInput = document.querySelector("#source-name");
   const textInput = document.querySelector("#source-text");
   const fileInput = document.querySelector("#source-file");
   const pastedImageStatus = document.querySelector("#pasted-image");
@@ -42,7 +42,8 @@ export function createSourceList(onChange, onAdded, readLocalImage) {
       included.push({ label: item.label, text });
       remaining -= text.length;
     }
-    count.textContent = items.length ? "(" + items.length + ")" : "";
+    count.textContent = String(items.length);
+    empty.hidden = items.length > 0;
     limit.hidden = !combinedTruncated;
     onChange(included);
   }
@@ -119,7 +120,6 @@ export function createSourceList(onChange, onAdded, readLocalImage) {
       }
     });
 
-    view.open = true;
     if (kind === "page" || kind === "image" || kind === "manual-image") {
       items.unshift(item);
       list.prepend(view);
@@ -153,7 +153,7 @@ export function createSourceList(onChange, onAdded, readLocalImage) {
   function updateDraft() {
     pastedImageStatus.hidden = !pastedImage;
     const busy = Boolean(reading);
-    for (const field of [nameInput, textInput, fileInput, clearPastedImage, addButton]) {
+    for (const field of [textInput, fileInput, clearPastedImage, addButton]) {
       field.disabled = busy;
     }
     const file = fileInput.files[0];
@@ -246,10 +246,10 @@ export function createSourceList(onChange, onAdded, readLocalImage) {
     addStatus.hidden = true;
     const file = pastedImage || fileInput.files[0];
     if (isImageFile(file)) {
-      await addLocalImage(file, nameInput.value.trim() || (pastedImage ? "Screenshot" : file.name));
+      await addLocalImage(file, pastedImage ? "Screenshot" : file.name);
       return;
     }
-    const label = nameInput.value.trim() || file?.name || "Catatan " + (nextId + 1);
+    const label = file?.name || "Catatan " + (nextId + 1);
     let value = textInput.value;
     let fileTooLarge = false;
     if (file) {

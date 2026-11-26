@@ -8,42 +8,32 @@
     <script type="module" src="panel.js"></script>
   </head>
   <body>
-    <header class="panel-bar">
-      <span class="panel-name">Baca Halaman</span>
-      <details id="panel-menu" class="panel-menu">
-        <summary aria-label="Menu panel">···</summary>
-        <div class="menu-actions">
-          <button id="rescan" data-rescan type="button" disabled>Pindai ulang</button>
-          <button data-pick-area type="button" disabled>Pilih area</button>
-          <button id="add-source" data-add-source type="button">Tambah sumber</button>
-          <button id="open-settings" data-open-settings type="button">Pengaturan</button>
-        </div>
-      </details>
-    </header>
-
+    <nav class="view-switch" aria-label="Tampilan panel">
+      <button id="show-chat" type="button" aria-controls="conversation" aria-current="page">Percakapan</button>
+      <button id="show-sources" type="button" aria-controls="sources-panel">Sumber <span id="source-count">0</span></button>
+      <button id="open-settings" type="button" aria-controls="settings-panel" data-open-settings>Pengaturan</button>
+    </nav>
     <main class="workspace" id="workspace">
-      <header class="page-heading">
-        <div>
+      <div id="context">
+        <header class="page-heading" id="page-context" hidden>
           <h1 id="tab-title">Halaman aktif</h1>
           <p id="tab-domain" class="meta" hidden></p>
+        </header>
+        <p id="status" class="status" role="status" aria-atomic="true">
+          Buka Baca Halaman dari tab yang ingin dibaca.
+        </p>
+        <p id="image-status" class="status" role="status" hidden></p>
+        <button id="cancel-area" class="text-button" type="button" hidden>Batalkan pilihan area</button>
+        <div id="connection-problem" class="connection-problem" hidden>
+          <p id="connection-message" role="status"></p>
+          <button class="text-button" data-open-settings type="button">Periksa</button>
         </div>
-        <button id="show-sources" class="text-button source-toggle" type="button" aria-controls="sources-panel" aria-expanded="false">
-          Sumber <span id="source-count"></span>
-        </button>
-      </header>
-      <p id="status" class="status" role="status" aria-atomic="true">
-        Klik ikon Baca Halaman atau tekan Alt+Shift+G di tab yang ingin dibaca.
-      </p>
-      <p id="image-status" class="status" role="status" hidden></p>
-      <button id="cancel-area" class="text-button" type="button" hidden>Batalkan pilihan area</button>
-      <div id="connection-problem" class="connection-problem" hidden>
-        <p id="connection-message" role="status"></p>
-        <button class="text-button" data-open-settings type="button">Periksa</button>
       </div>
-
       <section id="sources-panel" data-workspace-view="sources" aria-label="Sumber" hidden>
-        <div class="source-tools">
-          <div>
+        <button id="add-source" data-add-source type="button">Tambah sumber</button>
+        <details class="scan-options">
+          <summary>Opsi pemindaian</summary>
+          <div class="source-tools">
             <label for="mode">Ambil teks dari</label>
             <select id="mode" disabled>
               <option value="main">Teks utama</option>
@@ -51,21 +41,19 @@
               <option value="viewport">Teks di layar</option>
               <option value="page">Seluruh halaman</option>
             </select>
+            <div class="source-actions">
+              <button id="rescan" data-rescan type="button" disabled>Pindai ulang</button>
+              <button data-pick-area type="button" disabled>Pilih area</button>
+            </div>
           </div>
-          <button class="text-button" data-rescan type="button" disabled>Pindai ulang</button>
-          <button class="text-button" data-pick-area type="button" disabled>Pilih area</button>
-          <button class="text-button" data-add-source type="button">Tambah sumber</button>
-        </div>
+        </details>
+        <p id="no-sources" class="meta">Belum ada sumber.</p>
         <p id="source-status" class="status" role="status" hidden></p>
         <p id="source-limit" class="status" hidden>Batas gabungan 6.000 karakter mengikuti urutan sumber.</p>
         <div id="source-list"></div>
       </section>
 
-      <section id="settings-panel" data-workspace-view="settings" aria-labelledby="settings-heading" hidden>
-        <div class="settings-heading">
-          <h2 id="settings-heading" tabindex="-1">Pengaturan</h2>
-          <button id="close-settings" class="text-button" type="button">Selesai</button>
-        </div>
+      <section id="settings-panel" data-workspace-view="settings" aria-label="Pengaturan" hidden>
         <div class="setting-row">
           <label for="model">Model lokal</label>
           <select id="model" disabled>
@@ -86,48 +74,47 @@
         <p id="ollama-origin" class="status" hidden>Tambahkan <code></code> ke OLLAMA_ORIGINS.</p>
       </section>
 
-      <section class="conversation" data-workspace-view="conversation" aria-label="Percakapan">
+      <section class="conversation" id="conversation" data-workspace-view="conversation" aria-label="Percakapan">
+        <button id="add-missing-source" data-add-source type="button">Tambah sumber</button>
         <div id="turns"></div>
       </section>
     </main>
 
     <form class="composer" id="composer">
-      <div id="language-field" class="language-field" hidden>
-        <label for="language">Bahasa tujuan</label>
-        <input id="language" value="Indonesia" maxlength="60">
-      </div>
-      <label id="prompt-label" class="screen-reader" for="prompt">Pertanyaan</label>
-      <textarea id="prompt" rows="2" maxlength="2000" placeholder="Tanya tentang halaman ini…" required></textarea>
-      <div class="composer-footer">
-        <label class="screen-reader" for="tool">Alat</label>
-        <select id="tool">
-          <option value="ask">Tanya halaman</option>
-          <option value="summarize">Ringkas</option>
-          <option value="explain">Jelaskan</option>
-          <option value="answer">Jawab soal</option>
-          <option value="translate">Terjemahkan</option>
-        </select>
-        <div class="composer-buttons">
-          <button id="stop" class="text-button" type="button" hidden>Hentikan</button>
-          <button id="send" class="primary" type="submit" disabled>Kirim</button>
+      <div class="composer-box">
+        <div id="language-field" class="language-field" hidden>
+          <label for="language">Bahasa tujuan</label>
+          <input id="language" value="Indonesia" maxlength="60">
+        </div>
+        <label id="prompt-label" class="screen-reader" for="prompt">Pertanyaan</label>
+        <textarea id="prompt" rows="2" maxlength="2000" placeholder="Tanya tentang halaman ini…" required></textarea>
+        <div class="composer-footer">
+          <label class="screen-reader" for="tool">Alat</label>
+          <select id="tool">
+            <option value="ask">Tanya halaman</option>
+            <option value="summarize">Ringkas</option>
+            <option value="explain">Jelaskan</option>
+            <option value="answer">Jawab soal</option>
+            <option value="translate">Terjemahkan</option>
+          </select>
+          <div class="composer-buttons">
+            <button id="stop" class="text-button" type="button" hidden>Hentikan</button>
+            <button id="send" class="primary" type="submit" disabled>Kirim</button>
+          </div>
         </div>
       </div>
-      <p id="composer-hint" class="meta" hidden></p>
     </form>
 
     <dialog id="add-dialog" aria-labelledby="add-heading">
       <form id="source-form">
         <h2 id="add-heading">Tambah sumber</h2>
-        <label for="source-name">Nama sumber (opsional)</label>
-        <input id="source-name" maxlength="100">
-        <label for="source-text">Ketik atau tempel teks</label>
-        <textarea id="source-text" rows="4" aria-describedby="paste-hint"></textarea>
-        <p id="paste-hint" class="meta">Gunakan Ctrl+V di sini untuk menempel screenshot.</p>
+        <label for="source-text">Teks atau gambar dari clipboard</label>
+        <textarea id="source-text" rows="4"></textarea>
         <div id="pasted-image" class="source-actions" hidden>
           <span>Screenshot siap dibaca</span>
           <button id="clear-pasted-image" class="text-button" type="button">Hapus</button>
         </div>
-        <label for="source-file">Atau pilih file teks atau gambar</label>
+        <label for="source-file">Atau pilih file</label>
         <input type="file" id="source-file" accept=".txt,.md,.markdown,.png,.jpg,.jpeg,.webp,text/plain,text/markdown,image/png,image/jpeg,image/webp" aria-describedby="source-file-formats">
         <p id="source-file-formats" class="meta">TXT, Markdown, PNG, JPEG, WebP. Gambar maksimal 20 MB.</p>
         <p id="add-status" class="status" role="status" hidden></p>
@@ -155,11 +142,11 @@
 
     <template id="turn-template">
       <article class="turn">
-        <h2 class="turn-tool"></h2>
         <p class="turn-question"></p>
+        <h2 class="turn-tool"></h2>
         <p class="turn-answer" hidden></p>
         <p class="turn-status status" role="status"></p>
-        <p class="turn-sources meta"></p>
+        <details class="turn-citations"><summary>Sumber jawaban</summary><ul class="turn-sources"></ul></details>
       </article>
     </template>
   </body>
